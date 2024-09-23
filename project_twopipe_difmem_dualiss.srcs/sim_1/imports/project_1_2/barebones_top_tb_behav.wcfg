@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="barebones_top_tb_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="barebones_top_tb" />
+            <top_module name="glbl" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0fs"></ZoomStartTime>
+      <ZoomEndTime time="87801fs"></ZoomEndTime>
+      <Cursor1Time time="0fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="239"></NameColumnWidth>
+      <ValueColumnWidth column_width="126"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="29" />
+   <wvobject fp_name="/barebones_top_tb/reset_i" type="logic">
+      <obj_property name="ElementShortName">reset_i</obj_property>
+      <obj_property name="ObjectShortName">reset_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/clk_i" type="logic">
+      <obj_property name="ElementShortName">clk_i</obj_property>
+      <obj_property name="ObjectShortName">clk_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/data_wb_dat_i" type="array">
+      <obj_property name="ElementShortName">data_wb_dat_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">data_wb_dat_i[31:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/data_wb_dat_o" type="array">
+      <obj_property name="ElementShortName">data_wb_dat_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">data_wb_dat_o[31:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/data_wb_we_o" type="logic">
+      <obj_property name="ElementShortName">data_wb_we_o</obj_property>
+      <obj_property name="ObjectShortName">data_wb_we_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/PC_LOGIC/pc_o" type="array">
+      <obj_property name="ElementShortName">pc_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">pc_o[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/ISSUE_UNIT/instr_i_tmp" type="array">
+      <obj_property name="ElementShortName">instr_i_tmp[31:0]</obj_property>
+      <obj_property name="ObjectShortName">instr_i_tmp[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/ISSUE_UNIT/instr_i_1_tmp" type="array">
+      <obj_property name="ElementShortName">instr_i_1_tmp[31:0]</obj_property>
+      <obj_property name="ObjectShortName">instr_i_1_tmp[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/ISSUE_UNIT/instr_0_type" type="array">
+      <obj_property name="ElementShortName">instr_0_type[2:0]</obj_property>
+      <obj_property name="ObjectShortName">instr_0_type[2:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/ISSUE_UNIT/instr_1_type" type="array">
+      <obj_property name="ElementShortName">instr_1_type[2:0]</obj_property>
+      <obj_property name="ObjectShortName">instr_1_type[2:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/instr_i" type="array">
+      <obj_property name="ElementShortName">instr_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">instr_i[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/instr_i_1" type="array">
+      <obj_property name="ElementShortName">instr_i_1[31:0]</obj_property>
+      <obj_property name="ObjectShortName">instr_i_1[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/PC_LOGIC/stall_IF_0" type="logic">
+      <obj_property name="ElementShortName">stall_IF_0</obj_property>
+      <obj_property name="ObjectShortName">stall_IF_0</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/PC_LOGIC/stall_IF_1" type="logic">
+      <obj_property name="ElementShortName">stall_IF_1</obj_property>
+      <obj_property name="ObjectShortName">stall_IF_1</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/PC_LOGIC/stall_IF_dual" type="logic">
+      <obj_property name="ElementShortName">stall_IF_dual</obj_property>
+      <obj_property name="ObjectShortName">stall_IF_dual</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/ISSUE_UNIT/opcode_0" type="array">
+      <obj_property name="ElementShortName">opcode_0[4:0]</obj_property>
+      <obj_property name="ObjectShortName">opcode_0[4:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/core0/issue_stall_0" type="logic">
+      <obj_property name="ElementShortName">issue_stall_0</obj_property>
+      <obj_property name="ObjectShortName">issue_stall_0</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/core1/issue_stall_1" type="logic">
+      <obj_property name="ElementShortName">issue_stall_1</obj_property>
+      <obj_property name="ObjectShortName">issue_stall_1</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/ISSUE_UNIT/stall_check" type="logic">
+      <obj_property name="ElementShortName">stall_check</obj_property>
+      <obj_property name="ObjectShortName">stall_check</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/core0/rs1_ID" type="array">
+      <obj_property name="ElementShortName">rs1_ID[4:0]</obj_property>
+      <obj_property name="ObjectShortName">rs1_ID[4:0]</obj_property>
+      <obj_property name="Radix">BINARYRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/core0/rs2_ID" type="array">
+      <obj_property name="ElementShortName">rs2_ID[4:0]</obj_property>
+      <obj_property name="ObjectShortName">rs2_ID[4:0]</obj_property>
+      <obj_property name="Radix">BINARYRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/core0/rd_ID" type="array">
+      <obj_property name="ElementShortName">rd_ID[4:0]</obj_property>
+      <obj_property name="ObjectShortName">rd_ID[4:0]</obj_property>
+      <obj_property name="Radix">BINARYRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/core0/imm_dec_i" type="array">
+      <obj_property name="ElementShortName">imm_dec_i[29:0]</obj_property>
+      <obj_property name="ObjectShortName">imm_dec_i[29:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/core0/csr_addr_ID" type="array">
+      <obj_property name="ElementShortName">csr_addr_ID[11:0]</obj_property>
+      <obj_property name="ObjectShortName">csr_addr_ID[11:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/core0/opcode_0" type="array">
+      <obj_property name="ElementShortName">opcode_0[4:0]</obj_property>
+      <obj_property name="ObjectShortName">opcode_0[4:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/core0/funct3_0" type="logic">
+      <obj_property name="ElementShortName">funct3_0</obj_property>
+      <obj_property name="ObjectShortName">funct3_0</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/core0/stall_EX" type="logic">
+      <obj_property name="ElementShortName">stall_EX</obj_property>
+      <obj_property name="ObjectShortName">stall_EX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/core0/stall_ID" type="logic">
+      <obj_property name="ElementShortName">stall_ID</obj_property>
+      <obj_property name="ObjectShortName">stall_ID</obj_property>
+   </wvobject>
+   <wvobject fp_name="/barebones_top_tb/uut/corewb/core0/stall_IF" type="logic">
+      <obj_property name="ElementShortName">stall_IF</obj_property>
+      <obj_property name="ObjectShortName">stall_IF</obj_property>
+   </wvobject>
+</wave_config>
