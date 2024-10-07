@@ -52,101 +52,190 @@ module issue_unit(
 
     // assign instructions to pipelines
     always@(*) begin
-        if(stall_check)
+        if(instr_0_type == mem && instr_1_type == mem && !stall_IF_1)
         begin
-            if(instr_0_type == mem && instr_1_type == mem)
-            begin
-                issue_stall_0 = 1; // NOP
-                instr_i_reg <= 64'h13;
-                instr_i_1_reg = instr_i_tmp;
-                priority = 1'b1;
-                pc_increment = 4;              
-                issue_stall_1 = 0;
-                
-            end
-            else if(instr_0_type == mem && instr_1_type == branch)
-            begin
-                instr_i_reg = instr_i_1_tmp;
-                instr_i_1_reg = instr_i_tmp;
-                priority = 1'b1;
-                pc_increment = 8;               
-                issue_stall_0 = 0;
-                issue_stall_1 = 0;            
-            end
-            else if(instr_0_type == branch && instr_1_type == mem)
-            begin
-                instr_i_reg = instr_i_tmp;
-                issue_stall_1 = 1; // NOP
-                priority = 1'b0;
-                pc_increment = 4;              
-                issue_stall_0 = 0;
-                
-            end
-            else if(instr_0_type == mem && instr_1_type == ALU)
-            begin
-                instr_i_reg = instr_i_1_tmp;
-                instr_i_1_reg = instr_i_tmp;
-                priority = 1'b1;
-                pc_increment = 8;
-                issue_stall_0 = 0;
-                issue_stall_1 = 0;   
-            end
-            else if(instr_0_type == ALU && instr_1_type == mem)
-            begin
-                instr_i_reg = instr_i_tmp;
-                instr_i_1_reg = instr_i_1_tmp;
-                priority = 1'b0;
-                pc_increment = 8;
-                issue_stall_0 = 0;
-                issue_stall_1 = 0;      
-            end
-            else if(instr_0_type == ALU && instr_1_type == branch)
-            begin
-                instr_i_reg = instr_i_1_tmp;
-                instr_i_1_reg = instr_i_tmp;
-                priority = 1'b1;
-                pc_increment = 8;
-                issue_stall_0 = 0;
-                issue_stall_1 = 0;  
-            end
-            else if(instr_0_type == branch && instr_1_type == ALU)
-            begin
-                instr_i_reg = instr_i_tmp;
-                issue_stall_1 = 1; // NOP
-                priority = 1'b0;
-                pc_increment = 4;
-                issue_stall_0 = 0;
-                
-            end
-            else if(instr_0_type == branch && instr_1_type == branch)
-            begin
-                instr_i_reg = instr_i_tmp;
-                issue_stall_1 = 1; // NOP
-                priority = 1'b0;
-                pc_increment = 4;
-                issue_stall_0 = 0;
-            end
-            else if(instr_0_type == ALU && instr_1_type == ALU)
-            begin
-                instr_i_reg = instr_i_tmp;
-                instr_i_1_reg = instr_i_1_tmp;
-                priority = 1'b0;
-                pc_increment = 8;
-                issue_stall_0 = 0;
-                issue_stall_1 = 0;
-            end
-            else 
-            begin // Bura kalkabilir !!!!
-                pc_increment = 8;
-                issue_stall_0 = 0;
-                issue_stall_1 = 0;
-            end   
+            instr_i_reg   = instr_i_1_tmp;
+            instr_i_1_reg = instr_i_tmp;
+            priority      = 1'b1;
+            pc_increment  = 4;         
+            issue_stall_0 = 1; // NOP     
+            issue_stall_1 = 0;
         end
-        else 
-        begin // Bura kalkabilir !!!!
+        else if(instr_0_type == mem && instr_1_type == branch && !stall_IF_0 && !stall_IF_1)
+        begin
+            instr_i_reg   = instr_i_1_tmp;
+            instr_i_1_reg = instr_i_tmp;
+            priority      = 1'b1;
+            pc_increment  = 8;               
+            issue_stall_0 = 0;
+            issue_stall_1 = 0;            
+        end
+        else if(instr_0_type == mem && instr_1_type == branch && stall_IF_0 && !stall_IF_1)
+        begin
+            instr_i_reg   = instr_i_1_tmp;
+            instr_i_1_reg = instr_i_tmp;
+            priority      = 1'b1;
+            pc_increment  = 4;               
+            issue_stall_0 = 1;
+            issue_stall_1 = 0;            
+        end
+        else if(instr_0_type == branch && instr_1_type == mem && !stall_IF_0 && !stall_IF_1)
+        begin
+            instr_i_reg   = instr_i_tmp;
+            instr_i_1_reg = instr_i_1_tmp;
+            priority      = 1'b0;
+            pc_increment  = 4;              
+            issue_stall_0 = 0;
+            issue_stall_1 = 1; // NOP
+        end
+        else if(instr_0_type == branch && instr_1_type == mem && !stall_IF_0 && stall_IF_1)
+        begin
+            instr_i_reg   = instr_i_tmp;
+            instr_i_1_reg = instr_i_1_tmp;
+            priority      = 1'b0;
+            pc_increment  = 4;              
+            issue_stall_0 = 0;
+            issue_stall_1 = 1; // NOP
+        end
+        /////////////////////////////////
+        else if(instr_0_type == mem && instr_1_type == ALU && !stall_IF_0 && !stall_IF_1)
+        begin
+            instr_i_reg   = instr_i_1_tmp;
+            instr_i_1_reg = instr_i_tmp;
+            priority      = 1'b1;
+            pc_increment  = 8;
+            issue_stall_0 = 0;
+            issue_stall_1 = 0;   
+        end
+        else if(instr_0_type == mem && instr_1_type == ALU && stall_IF_0 && !stall_IF_1)
+        begin
+            instr_i_reg   = instr_i_1_tmp;
+            instr_i_1_reg = instr_i_tmp;
+            priority      = 1'b1;
+            pc_increment  = 4;
+            issue_stall_0 = 1;
+            issue_stall_1 = 0;   
+        end
+        ////////////////////////////////
+        else if(instr_0_type == ALU && instr_1_type == mem && !stall_IF_0 && !stall_IF_1)
+        begin
+            instr_i_reg = instr_i_tmp;
+            instr_i_1_reg = instr_i_1_tmp;
+            priority = 1'b0;
             pc_increment = 8;
             issue_stall_0 = 0;
+            issue_stall_1 = 0;      
+        end
+        else if(instr_0_type == ALU && instr_1_type == mem && stall_IF_0 && !stall_IF_1)
+        begin
+            instr_i_reg = instr_i_1_tmp;
+            instr_i_1_reg = instr_i_tmp;
+            priority = 1'b1;
+            pc_increment = 4;
+            issue_stall_0 = 1;
+            issue_stall_1 = 0;      
+        end
+        else if(instr_0_type == ALU && instr_1_type == mem && !stall_IF_0 && stall_IF_1)
+        begin
+            instr_i_reg = instr_i_tmp;
+            instr_i_1_reg = instr_i_1_tmp;
+            priority = 1'b0;
+            pc_increment = 4;
+            issue_stall_0 = 0;
+            issue_stall_1 = 1;      
+        end
+        ///////////////////////////////
+        else if(instr_0_type == ALU && instr_1_type == branch && !stall_IF_0 && !stall_IF_1)
+        begin
+            instr_i_reg   = instr_i_1_tmp;
+            instr_i_1_reg = instr_i_tmp;
+            priority      = 1'b1;
+            pc_increment  = 8;
+            issue_stall_0 = 0;
+            issue_stall_1 = 0;  
+        end
+        else if(instr_0_type == ALU && instr_1_type == branch && stall_IF_0 && !stall_IF_1)
+        begin
+            instr_i_reg   = instr_i_1_tmp;
+            instr_i_1_reg = instr_i_tmp;
+            priority      = 1'b1;
+            pc_increment  = 4;
+            issue_stall_0 = 1;
+            issue_stall_1 = 0;  
+        end
+        //////////////////////////////
+        else if(instr_0_type == branch && instr_1_type == ALU && !stall_IF_0 && !stall_IF_1)
+        begin
+            instr_i_reg   = instr_i_tmp;
+            instr_i_1_reg = instr_i_1_tmp;
+            priority      = 1'b0;
+            pc_increment  = 4;
+            issue_stall_0 = 0;
+            issue_stall_1 = 1; // NOP
+        end
+        else if(instr_0_type == branch && instr_1_type == ALU && !stall_IF_0 && stall_IF_1)
+        begin
+            instr_i_reg   = instr_i_tmp;
+            instr_i_1_reg = instr_i_1_tmp;
+            priority      = 1'b0;
+            pc_increment  = 4;
+            issue_stall_0 = 0;
+            issue_stall_1 = 1; // NOP
+        end
+        //////////////////////////////
+        else if(instr_0_type == branch && instr_1_type == branch && !stall_IF_0 && !stall_IF_1)
+        begin
+            instr_i_reg   = instr_i_tmp;
+            instr_i_1_reg = instr_i_1_tmp;
+            priority      = 1'b0;
+            pc_increment  = 4;
+            issue_stall_0 = 0;
+            issue_stall_1 = 1; // NOP
+        end
+        else if(instr_0_type == branch && instr_1_type == branch && !stall_IF_0 && stall_IF_1)
+        begin
+            instr_i_reg   = instr_i_tmp;
+            instr_i_1_reg = instr_i_1_tmp;
+            priority      = 1'b0;
+            pc_increment  = 4;
+            issue_stall_0 = 0;
+            issue_stall_1 = 1; // NOP
+        end
+        ///////////////////////////////
+        else if(instr_0_type == ALU && instr_1_type == ALU && !stall_IF_0 && !stall_IF_1)
+        begin
+            instr_i_reg   = instr_i_tmp;
+            instr_i_1_reg = instr_i_1_tmp;
+            priority      = 1'b0;
+            pc_increment  = 8;
+            issue_stall_0 = 0;
             issue_stall_1 = 0;
+        end
+        else if(instr_0_type == ALU && instr_1_type == ALU && stall_IF_0 && !stall_IF_1)
+        begin
+            instr_i_reg   = instr_i_1_tmp;
+            instr_i_1_reg = instr_i_tmp;
+            priority      = 1'b1;
+            pc_increment  = 4;
+            issue_stall_0 = 1;
+            issue_stall_1 = 0;
+        end
+        else if(instr_0_type == ALU && instr_1_type == ALU && !stall_IF_0 && stall_IF_1)
+        begin
+            instr_i_reg   = instr_i_tmp;
+            instr_i_1_reg = instr_i_1_tmp;
+            priority      = 1'b0;
+            pc_increment  = 4;
+            issue_stall_0 = 0;
+            issue_stall_1 = 1;
+        end
+        ///////////////////////////////
+        else 
+        begin 
+            priority      = 1'b0;
+            pc_increment = 0;
+            issue_stall_0 = 1;
+            issue_stall_1 = 1;
         end   
     end
 
