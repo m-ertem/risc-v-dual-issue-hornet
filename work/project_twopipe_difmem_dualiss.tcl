@@ -83,6 +83,7 @@ proc checkRequiredFiles { origin_dir} {
  "[file normalize "$origin_dir/../project_twopipe_difmem_dualiss.srcs/sources_1/new/dat_mem_rw_wb.v"]"\
  "[file normalize "$origin_dir/../project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/muldiv/divider_32.v"]"\
  "[file normalize "$origin_dir/../project_twopipe_difmem_dualiss.srcs/sources_1/new/dual_hazard_unit.v"]"\
+ "[file normalize "$origin_dir/../project_twopipe_difmem_dualiss.srcs/sources_1/new/dual_forwarding_unit.v"]"\
  "[file normalize "$origin_dir/../project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/forwarding_unit.v"]"\
  "[file normalize "$origin_dir/../project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/hazard_detection_unit.v"]"\
  "[file normalize "$origin_dir/../project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/imm_decoder.v"]"\
@@ -250,6 +251,7 @@ set files [list \
  [file normalize "${origin_dir}/../project_twopipe_difmem_dualiss.srcs/sources_1/new/dat_mem_rw_wb.v"]\
  [file normalize "${origin_dir}/../project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/muldiv/divider_32.v"]\
  [file normalize "${origin_dir}/../project_twopipe_difmem_dualiss.srcs/sources_1/new/dual_hazard_unit.v"]\
+ [file normalize "${origin_dir}/../project_twopipe_difmem_dualiss.srcs/sources_1/new/dual_forwarding_unit.v"]\
  [file normalize "${origin_dir}/../project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/forwarding_unit.v"]\
  [file normalize "${origin_dir}/../project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/hazard_detection_unit.v"]\
  [file normalize "${origin_dir}/../project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/imm_decoder.v"]\
@@ -274,7 +276,7 @@ set files [list \
 ]
 set imported_files ""
 foreach f $files {
-  lappend imported_files [import_files -fileset sources_1 $f]
+  lappend imported_files [add_files -fileset sources_1 $f]
 }
 
 # Set 'sources_1' fileset file properties for remote files
