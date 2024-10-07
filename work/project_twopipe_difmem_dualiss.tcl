@@ -23,43 +23,6 @@
 # 2. The following source(s) files that were local or imported into the original project.
 #    (Please see the '$orig_proj_dir' and '$origin_dir' variable setting below at the start of the script)
 #
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/ALU.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/muldiv/MULDIV_ctrl.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/muldiv/MULDIV_in.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/muldiv/MULDIV_top.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/muldiv/MUL_DIV_out.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/control_unit.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/new/core_0.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/new/core_1.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/core_wb.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/csr_unit.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/new/dat_mem_rw_wb.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/muldiv/divider_32.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/new/dual_hazard_unit.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/forwarding_unit.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/hazard_detection_unit.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/imm_decoder.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/new/inst_mem_rw_wb.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/new/issue_unit.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/load_store_unit.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/peripherals/loader_wb.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/peripherals/mtime_registers_wb.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/muldiv/multiplier_32.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/new/pc_logic.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/new/reg_bank.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/peripherals/uart_wb.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/processor/fpga_uart/fpga_top.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/core/core.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/lib/uart.h"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/processor/barebones/barebones_wb_top.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/peripherals/debug_interface_wb.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/processor/barebones/barebones_top_tb.v"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/test/aes/aes.h"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/imports/RISC-V-main/lib/irq.h"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/archive_project_summary.txt"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sources_1/ip/clk_wiz_0/clk_wiz_0.xci"
-#    "C:/Users/ayseertem/Desktop/project_twopipe_difmem_dualiss/project_twopipe_difmem_dualiss.srcs/sim_1/imports/project_1_2/barebones_top_tb_behav.wcfg"
-#
 # 3. The following remote source files that were added to the original project:-
 #
 #    <none>
