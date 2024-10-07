@@ -50,7 +50,16 @@ module core_0(input reset_i, //active-low reset
             // pc_logic
             output [31:0] branch_target_addr, // goes to pc_logic
             output reg [31:0] pc_o,
-            input [31:0] pc_i
+            input [31:0] pc_i,
+
+            // dual forwarding unit
+            output [4:0] rs1_EX, rs2_EX,
+            output [4:0] rd_MEM,
+            // output [4:0] rd_WB, // already declared
+            output [6:0] wb_MEM,
+            // output       rf_wen_WB, // already declared
+            input [1:0]  mux2_ctrl_EX,
+            input [1:0]  mux4_ctrl_EX
             ); //interrupt acknowledge signal. driven high for one cycle when an external interrupt is handled.
 
 parameter reset_vector = 32'h0; //pc is set to this address when a reset occurs.
@@ -63,12 +72,11 @@ wire [31:0] mux1_o_IF, mux2_o_IF, mux3_o_IF, mux4_o_IF; //mux outputs
 // wire [31:0] pc_i; //pc input
 // reg  [31:0] pc_o; //pc output
 
-//wire stall_IF; //stalls the IF stage when it is high.
 //pipeline registers
 reg [31:0] IFID_preg_instr;
 reg [31:0] IFID_preg_pc;
 reg        IFID_preg_dummy; //indicates if the instruction in the ID stage is dummy, i.e. a flushed instruction, nop.
-reg [31:0] IFID_preg_priority;
+reg IFID_preg_priority;
 //END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS
 
 //ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS
@@ -116,6 +124,7 @@ reg [11:0] IDEX_preg_csr_addr;
 reg        IDEX_preg_dummy; //indicates if the instruction in the EX stage is dummy, i.e. a flushed instruction, nop.
 reg        IDEX_preg_mret; //driven high when the instruction in EX stage is MRET.
 reg        IDEX_preg_misaligned; //driven high when the second part of a misaligned access is being executed in EX stage.
+reg        IDEX_preg_priority;
 
 //reg [31:0] register_bank [31:0]; //32x32 register file
 //END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS
@@ -133,11 +142,14 @@ wire [6:0]  wb_EX;
 wire [2:0]  mem_EX;
 wire [20:0] ex_EX;
 wire [31:0] pc_EX, data1_EX, data2_EX, imm_EX;
-wire [4:0]  rs1_EX, rs2_EX, rd_EX;
+// wire [4:0]  rs1_EX, rs2_EX, rd_EX;
+wire [4:0]  rd_EX;
 wire [11:0] csr_addr_EX;
 wire        csr_wen_EX;
+wire        priority_EX;
 //mux signals
-wire [1:0]  mux2_ctrl_EX,  mux4_ctrl_EX, mux6_ctrl_EX;
+// wire [1:0]  mux2_ctrl_EX,  mux4_ctrl_EX, mux6_ctrl_EX;
+wire [1:0]  mux6_ctrl_EX;
 wire        mux1_ctrl_EX, mux3_ctrl_EX, mux5_ctrl_EX, mux7_ctrl_EX, mux8_ctrl_EX;
 wire [31:0] mux1_o_EX, mux2_o_EX, mux3_o_EX, mux4_o_EX, mux5_o_EX, mux6_o_EX, mux7_o_EX, mux8_o_EX;
 //ALU signals
@@ -182,10 +194,10 @@ assign data_err_i = 1'b0;
 assign data_i = 32'b0;
 
 //signals from previous stage
-wire [6:0]  wb_MEM;
+// wire [6:0]  wb_MEM;
 wire [2:0]  mem_MEM;
 wire [31:0] aluout_MEM, data2_MEM;
-wire [4:0]  rd_MEM;
+//wire [4:0]  rd_MEM;
 wire [31:0] imm_MEM;
 wire [31:0] memout_MEM;
 wire [31:0] pc_MEM;
@@ -206,12 +218,13 @@ reg        MEMWB_preg_misaligned;
 
 //WB SIGNALS--------WB SIGNALS--------WB SIGNALS--------WB SIGNALS--------WB SIGNALS--------WB SIGNALS--------WB SIGNALS
 //signals from previous stage
-wire [4:0]  rd_WB;
+// wire [4:0]  rd_WB;
 wire [6:0]  wb_WB;
 wire        load_sign;
 wire [1:0]  mem_length_WB;
 wire [1:0]  mux_ctrl_WB;
-wire        rf_wen_WB, csr_wen_WB;
+// wire        rf_wen_WB, csr_wen_WB;
+wire        csr_wen_WB;
 wire [11:0] csr_addr_WB;
 wire [31:0] memout_WB, aluout_WB, imm_WB;
 wire        mret_WB;
@@ -291,7 +304,7 @@ assign mux4_o_IF = mux4_ctrl_IF ? mux3_o_IF : mux1_o_IF;
 assign pc_i = reset_i ? mux4_o_IF : reset_vector;*/
 assign instr_addr_o = pc_i;
 
-assign stall_IF = hazard_stall | muldiv_stall_EX | misaligned_access | data_stall_i | csr_stall | issue_stall_0 ; 
+assign stall_IF = hazard_stall | muldiv_stall_EX | misaligned_access | data_stall_i | csr_stall; // | issue_stall_0 ; 
 
 always @(posedge clk_i or negedge reset_i)
 begin
@@ -311,6 +324,12 @@ begin
 		IFID_preg_dummy <= 1'b1;
 	end
 
+	else if(issue_stall_0) //flush IF
+	begin
+		{IFID_preg_pc, IFID_preg_instr} <= 64'h13;
+		pc_o <= pc_i;
+	end
+
 	else
 	begin
 		if(!stall_ID) //stall the pipe if necessary
@@ -319,7 +338,7 @@ begin
             begin
                 {IFID_preg_pc, IFID_preg_instr} <= 64'h13;
                 pc_o <= pc_i;
-                IFID_preg_dummy <= 1'b1;                
+                IFID_preg_dummy <= 1'b1;           
             end
             else
             begin
@@ -327,7 +346,7 @@ begin
                 IFID_preg_pc <= pc_o;
                 IFID_preg_dummy <= 1'b0;
                 pc_o <= pc_i;   
-                IFID_preg_priority <= priority;            
+                IFID_preg_priority <= priority;    
             end
 		end
 	end
@@ -344,14 +363,14 @@ assign imm_dec_i    = IFID_preg_instr[31:2];
 assign csr_addr_ID  = IFID_preg_instr[31:20];
 
 //dual hazard 
-assign opcode_0 = IFID_preg_instr[6:2];
-assign funct3_0 = IFID_preg_instr[14];
+assign opcode_0     = IFID_preg_instr[6:2];
+assign funct3_0     = IFID_preg_instr[14];
 assign priority_out = IFID_preg_priority;        
 
 //assign nets
-assign stall_ID = hazard_stall | muldiv_stall_EX | misaligned_access | data_stall_i | csr_stall | issue_stall_0; //TODO: move csr stall below
-assign mux_ctrl_ID = hazard_stall;
-assign csr_wen_ID = ctrl_unit_wb_csr_wen;
+assign stall_ID     = hazard_stall | muldiv_stall_EX | misaligned_access | data_stall_i | csr_stall; // | issue_stall_0; //TODO: move csr stall below
+assign mux_ctrl_ID  = hazard_stall;
+assign csr_wen_ID   = ctrl_unit_wb_csr_wen;
 
 assign mux1_o_ID    = mux_ctrl_ID ? 7'h0c : {ctrl_unit_wb_mux,
                                              ctrl_unit_wb_sign,
@@ -480,8 +499,7 @@ begin
             IDEX_preg_mret <= mret_ID;
             IDEX_preg_misaligned <= 1'b0;
             IDEX_preg_dummy <= IFID_preg_dummy;
-
-            
+            IDEX_preg_priority <= IFID_preg_priority;
         end
     end
 end
@@ -523,6 +541,7 @@ assign rs2_EX   = IDEX_preg_rs2;
 assign rd_EX    = IDEX_preg_rd;
 assign imm_EX   = IDEX_preg_imm;
 assign csr_addr_EX = IDEX_preg_csr_addr;
+assign priority_EX = IDEX_preg_priority;
 //assign nets
 assign alu_func     = ex_EX[3:0];
 assign csr_alu_func = ex_EX[5:4];
@@ -566,15 +585,16 @@ assign csr_alu_out = csr_alu_func == 2'd0 ? mux8_o_EX
                    : csr_alu_func == 2'd1 ? csr_reg_out | mux8_o_EX
                    : csr_reg_out & ~mux8_o_EX;
 
-//instantiate the forwarding unit.
-forwarding_unit FWD_UNIT(.rs1(rs1_EX),
-                         .rs2(rs2_EX),
-                         .exmem_rd(rd_MEM),
-                         .memwb_rd(rd_WB),
-                         .exmem_wb(wb_MEM[3]),
-                         .memwb_wb(rf_wen_WB),
-                         .mux1_ctrl(mux2_ctrl_EX),
-                         .mux2_ctrl(mux4_ctrl_EX));
+// //instantiate the forwarding unit.
+// forwarding_unit FWD_UNIT(.rs1(rs1_EX),
+//                          .rs2(rs2_EX),
+//                          .exmem_rd(rd_MEM),
+//                          .memwb_rd(rd_WB),
+//                          .exmem_wb(wb_MEM[3]),
+//                          .memwb_wb(rf_wen_WB),
+//                          .mux1_ctrl(mux2_ctrl_EX),
+//                          .mux2_ctrl(mux4_ctrl_EX));
+
 //instantiate the ALU
 ALU ALU (.src1(mux1_o_EX), 
          .src2(mux3_o_EX), 
@@ -583,7 +603,7 @@ ALU ALU (.src1(mux1_o_EX),
 
 //branch logic and address calculation
 assign take_branch = J | (B & aluout_EX[0]);
-assign branch_addr_calc = mux5_o_EX + imm_EX;
+assign branch_addr_calc = priority_EX ? mux5_o_EX + imm_EX + 32'd4 : mux5_o_EX + imm_EX;
 assign branch_target_addr[31:1] = branch_addr_calc[31:1];
 assign branch_target_addr[0] = (!mux5_ctrl_EX & J) ? 1'b0 : branch_addr_calc[0]; //clear the least-significant bit if the instruction is JALR.
 assign instr_addr_misaligned = take_branch & (branch_target_addr[1:0] != 2'd0);

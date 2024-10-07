@@ -1,51 +1,63 @@
 module core_1(input reset_i, //active-low reset
 
-            input clk_i,
+    input clk_i,
 
-            input  [31:0] data_i,       //data memory input
-            output [3:0]  data_wmask_o, //data memory mask output
-            output        data_wen_o,   //data memory write enable output
-            output [31:0] data_addr_o,  //data memory address output
-            output [31:0] data_o,       //data memory data output
-            output        data_req_o,   //data memory access request output. driven high when a store/load is carried out
-            input         data_stall_i, //data memory stall input. pipeline is stalled when a memory access request is answered with a stall.
-            input         data_err_i,   //data memory access error input. this will trigger a store/load access fault.
+    input  [31:0] data_i,       //data memory input
+    output [3:0]  data_wmask_o, //data memory mask output
+    output        data_wen_o,   //data memory write enable output
+    output [31:0] data_addr_o,  //data memory address output
+    output [31:0] data_o,       //data memory data output
+    output        data_req_o,   //data memory access request output. driven high when a store/load is carried out
+    input         data_stall_i, //data memory stall input. pipeline is stalled when a memory access request is answered with a stall.
+    input         data_err_i,   //data memory access error input. this will trigger a store/load access fault.
 
-            input  [31:0] instr_i,              //instruction input
-            output [31:0] instr_addr_o,         //instruction address output
-            input         instr_access_fault_i, //instruction access fault exception signal
+    input  [31:0] instr_i,              //instruction input
+    output [31:0] instr_addr_o,         //instruction address output
+    input         instr_access_fault_i, //instruction access fault exception signal
 
-            input         meip_i, mtip_i, msip_i, //interrupts
-            input  [15:0] fast_irq_i,
+    input         meip_i, mtip_i, msip_i, //interrupts
+    input  [15:0] fast_irq_i,
 
-            output irq_ack_o,
-            ////////register outputs/////////
-            output rf_wen_WB,
-            output [31:0] mux_o_WB,
-            output take_branch,
-            output csr_id_flush,
-            output stall_EX,
-            output stall_ID,
-            output [4:0] rd_WB,
-            output misaligned_access,
-            output [4:0] IDEX_preg_rs1,
-            output [4:0] IDEX_preg_rs2,
-            output [4:0] rs1_ID,
-            output [4:0] rs2_ID,   
-            input [31:0] IDEX_preg_data1,
-            input [31:0] IDEX_preg_data2,  
-            
-            input  issue_stall_1,  /*comes from issue unit */ 
-            output stall_IF,  /*goes to issue unit*/  
-            output [4:0] opcode_1, 
-            output funct3_1,  
-            
-            output [4:0] rd_ID,
-            
-            // pc_logic
-            // output reg [31:0] pc_o,
-            input [31:0] pc_i
-              ); //interrupt acknowledge signal. driven high for one cycle when an external interrupt is handled.
+    output irq_ack_o,
+    ////////register outputs/////////
+    output rf_wen_WB,
+    output [31:0] mux_o_WB,
+    // output take_branch,
+    output csr_id_flush,
+    output stall_EX,
+    output stall_ID,
+    output [4:0] rd_WB,
+    output misaligned_access,
+    output [4:0] IDEX_preg_rs1,
+    output [4:0] IDEX_preg_rs2,
+    output [4:0] rs1_ID,
+    output [4:0] rs2_ID,   
+    input [31:0] IDEX_preg_data1,
+    input [31:0] IDEX_preg_data2,  
+    
+    input  issue_stall_1,  /*comes from issue unit */ 
+    output stall_IF,  /*goes to issue unit*/  
+    output [4:0] opcode_1, 
+    output funct3_1,  
+    
+    output [4:0] rd_ID,
+    
+    // pc_logic
+    // output reg [31:0] pc_o,
+    input [31:0] pc_i,
+
+    // dual forwarding unit
+    output [4:0] rs1_EX, rs2_EX,
+    output [4:0] rd_MEM,
+    // output [4:0] rd_WB, // already declared
+    output [6:0] wb_MEM,
+    // output       rf_wen_WB, // already declared
+    input [1:0]  mux2_ctrl_EX,
+    input [1:0]  mux4_ctrl_EX,       
+
+    // take_branch signal from core_0    
+    input        take_branch
+    ); //interrupt acknowledge signal. driven high for one cycle when an external interrupt is handled.
 
 parameter reset_vector = 32'h0; //pc is set to this address when a reset occurs.
 
@@ -125,11 +137,13 @@ wire [6:0]  wb_EX;
 wire [2:0]  mem_EX;
 wire [20:0] ex_EX;
 wire [31:0] pc_EX, data1_EX, data2_EX, imm_EX;
-wire [4:0]  rs1_EX, rs2_EX, rd_EX;
+// wire [4:0]  rs1_EX, rs2_EX, rd_EX;
+wire [4:0]  rd_EX;
 wire [11:0] csr_addr_EX;
 wire        csr_wen_EX;
 //mux signals
-wire [1:0]  mux2_ctrl_EX,  mux4_ctrl_EX, mux6_ctrl_EX;
+// wire [1:0]  mux2_ctrl_EX,  mux4_ctrl_EX, mux6_ctrl_EX;
+wire [1:0]  mux6_ctrl_EX;
 wire        mux1_ctrl_EX, mux3_ctrl_EX, mux5_ctrl_EX, mux7_ctrl_EX, mux8_ctrl_EX;
 wire [31:0] mux1_o_EX, mux2_o_EX, mux3_o_EX, mux4_o_EX, mux5_o_EX, mux6_o_EX, mux7_o_EX, mux8_o_EX;
 //ALU signals
@@ -148,7 +162,7 @@ wire        hazard_stall; //output of the hazard detection unit.
 //branch signals
 wire [31:0] branch_target_addr; //branch target address, calculated in EX stage.
 wire [31:0] branch_addr_calc; //intermediate value during address calculation.
-wire        take_branch; //branch decision signal. 1 if the branch is taken, 0 otherwise.
+// wire        take_branch; //branch decision signal. 1 if the branch is taken, 0 otherwise.
 
 //pipeline registers
 reg [31:0] EXMEM_preg_imm;
@@ -167,10 +181,10 @@ reg [1:0]  EXMEM_preg_addr_bits; //two least-significant bits of data address.
 
 //MEM SIGNALS--------MEM SIGNALS--------MEM SIGNALS--------MEM SIGNALS--------MEM SIGNALS--------MEM SIGNALS--------MEM SIGNALS
 //signals from previous stage
-wire [6:0]  wb_MEM;
+// wire [6:0]  wb_MEM;
 wire [2:0]  mem_MEM;
 wire [31:0] aluout_MEM, data2_MEM;
-wire [4:0]  rd_MEM;
+// wire [4:0]  rd_MEM;
 wire [31:0] imm_MEM;
 wire [31:0] memout_MEM;
 wire [31:0] pc_MEM;
@@ -196,7 +210,8 @@ wire [6:0]  wb_WB;
 wire        load_sign;
 wire [1:0]  mem_length_WB;
 wire [1:0]  mux_ctrl_WB;
-wire        rf_wen_WB, csr_wen_WB;
+// wire        rf_wen_WB, csr_wen_WB;
+wire        csr_wen_WB;
 wire [11:0] csr_addr_WB;
 wire [31:0] memout_WB, aluout_WB, imm_WB;
 wire        mret_WB;
@@ -279,7 +294,7 @@ csr_unit CSR_UNIT(.clk_i(clk_i),
 //assign pc_i = reset_i ? mux4_o_IF : reset_vector;
 assign instr_addr_o = pc_i;
 
-assign stall_IF = hazard_stall | muldiv_stall_EX | misaligned_access | data_stall_i | csr_stall | issue_stall_1;
+assign stall_IF = hazard_stall | muldiv_stall_EX | misaligned_access | data_stall_i | csr_stall; // | issue_stall_1;
 
 always @(posedge clk_i or negedge reset_i)
 begin
@@ -296,6 +311,12 @@ begin
 		{IFID_preg_pc, IFID_preg_instr} <= 64'h13;
 		pc_o <= pc_i;
 		IFID_preg_dummy <= 1'b1;
+	end
+
+	else if(issue_stall_1) //flush IF
+	begin
+		{IFID_preg_pc, IFID_preg_instr} <= 64'h13;
+		pc_o <= pc_i;
 	end
 
 	else
@@ -332,7 +353,7 @@ assign csr_addr_ID  = IFID_preg_instr[31:20];
 assign opcode_1 = IFID_preg_instr[6:2];
 assign funct3_1 = IFID_preg_instr[14];
 //assign nets
-assign stall_ID = hazard_stall | muldiv_stall_EX | misaligned_access | data_stall_i | csr_stall | issue_stall_1; //TODO: move csr stall below
+assign stall_ID = hazard_stall | muldiv_stall_EX | misaligned_access | data_stall_i | csr_stall; // | issue_stall_1; //TODO: move csr stall below
 assign mux_ctrl_ID = hazard_stall;
 assign csr_wen_ID = ctrl_unit_wb_csr_wen;
 
@@ -549,15 +570,16 @@ assign csr_alu_out = csr_alu_func == 2'd0 ? mux8_o_EX
                    : csr_alu_func == 2'd1 ? csr_reg_out | mux8_o_EX
                    : csr_reg_out & ~mux8_o_EX;
 
-//instantiate the forwarding unit.
-forwarding_unit FWD_UNIT(.rs1(rs1_EX),
-                         .rs2(rs2_EX),
-                         .exmem_rd(rd_MEM),
-                         .memwb_rd(rd_WB),
-                         .exmem_wb(wb_MEM[3]),
-                         .memwb_wb(rf_wen_WB),
-                         .mux1_ctrl(mux2_ctrl_EX),
-                         .mux2_ctrl(mux4_ctrl_EX));
+// //instantiate the forwarding unit.
+// forwarding_unit FWD_UNIT(.rs1(rs1_EX),
+//                          .rs2(rs2_EX),
+//                          .exmem_rd(rd_MEM),
+//                          .memwb_rd(rd_WB),
+//                          .exmem_wb(wb_MEM[3]),
+//                          .memwb_wb(rf_wen_WB),
+//                          .mux1_ctrl(mux2_ctrl_EX),
+//                          .mux2_ctrl(mux4_ctrl_EX));
+
 //instantiate the ALU
 ALU ALU (.src1(mux1_o_EX), 
          .src2(mux3_o_EX), 
@@ -565,11 +587,12 @@ ALU ALU (.src1(mux1_o_EX),
          .alu_out(aluout_EX));
 
 //branch logic and address calculation
-assign take_branch = J | (B & aluout_EX[0]);
+// assign take_branch = J | (B & aluout_EX[0]);
 assign branch_addr_calc = mux5_o_EX + imm_EX;
 assign branch_target_addr[31:1] = branch_addr_calc[31:1];
 assign branch_target_addr[0] = (!mux5_ctrl_EX & J) ? 1'b0 : branch_addr_calc[0]; //clear the least-significant bit if the instruction is JALR.
-assign instr_addr_misaligned = take_branch & (branch_target_addr[1:0] != 2'd0);
+// assign instr_addr_misaligned = take_branch & (branch_target_addr[1:0] != 2'd0);
+assign instr_addr_misaligned = 1'b0;
 assign stall_EX = muldiv_stall_EX | data_stall_i;
 
 always @(posedge clk_i or negedge reset_i) //clock the outputs to the pipeline register
