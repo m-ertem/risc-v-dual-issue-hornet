@@ -78,172 +78,215 @@ wire [31:0]IDEX_preg_data_1_out_0;
 wire [31:0]IDEX_preg_data_2_out_0;
 wire [31:0]IDEX_preg_data_1_out_1;
 wire [31:0]IDEX_preg_data_2_out_1;
-//
+
+// pc logic unit signals
 wire [31:0] pc_o;
 wire [31:0] pc_i;
 wire [31:0] pc_increment;
 wire [31:0] branch_target_addr;
+
+// issue unit - dual hazard unit signals
 wire stall_IF_dual, stall_IF_0, stall_IF_1, take_branch_0;
-wire priority_out;
+wire priority_out_to_core_0;
+wire priority_out_to_dual_hazard_unit;
 wire funct3_0, funct3_1;
 wire [4:0] opcode_0, opcode_1, rd_ID_1, rd_ID_0, rs1_ID_0, rs1_ID_1, rs2_ID_0, rs2_ID_1;
 wire [4:0] rd_WB_0, rd_WB_1;
+
+// dual forwarding unit signals
+// -- for core_0
+wire [4:0]  rs1_EX_0, rs2_EX_0;
+wire [4:0]  rd_MEM_0;
+// wire [4:0]  rd_WB_0; // already declared
+wire [6:0] wb_MEM_0;
+// wire       rf_wen_WB_0; // already declared
+wire [1:0] mux2_ctrl_EX_0,  mux4_ctrl_EX_0;
+// -- for core_1
+wire [4:0]  rs1_EX_1, rs2_EX_1;
+wire [4:0]  rd_MEM_1;
+// wire [4:0]  rd_WB_1; already declared
+wire [6:0] wb_MEM_1;
+// wire       rf_wen_WB_1; // already declared
+wire [1:0] mux2_ctrl_EX_1,  mux4_ctrl_EX_1;
+//---------------------------------------//
+
 core_0    #(.reset_vector(reset_vector))
-        core0(
-        //Clock and reset signals.
-        .clk_i(clk_i),
-        .reset_i(reset_i), //active-low, asynchronous reset
+    core0(
+    //Clock and reset signals.
+    .clk_i(clk_i),
+    .reset_i(reset_i), //active-low, asynchronous reset
 
-        //Data memory interface
-        //.data_addr_o(data_addr_o),
-        //.data_i(data_i),
-        //.data_o(data_o),
-        //.data_wmask_o(data_wmask_o),
-        //.data_wen_o(data_wen_o), //active-low
-        //.data_req_o(data_req_o),
-        //.data_stall_i(data_stall_i),
-        //.data_err_i(data_err_i), 
+    //Data memory interface
+    //.data_addr_o(data_addr_o),
+    //.data_i(data_i),
+    //.data_o(data_o),
+    //.data_wmask_o(data_wmask_o),
+    //.data_wen_o(data_wen_o), //active-low
+    //.data_req_o(data_req_o),
+    //.data_stall_i(data_stall_i),
+    //.data_err_i(data_err_i), 
 
-        //Instruction memory interface
-        .instr_addr_o(instr_addr_o),
-        .instr_i(instr_i),
-        .instr_access_fault_i(instr_access_fault_i),
+    //Instruction memory interface
+    .instr_addr_o(instr_addr_o),
+    .instr_i(instr_i),
+    .instr_access_fault_i(instr_access_fault_i),
 
-        //Interrupts
-        .meip_i(meip_i),
-        .mtip_i(mtip_i),
-        .msip_i(msip_i),
-        .fast_irq_i(fast_irq_i),
-        .irq_ack_o(irq_ack_o),
-        
-        ////////register bank/////////
-       .rf_wen_WB (rf_wen_WB_0),
-       .rd_WB (rd_WB_0),
-       .mux_o_WB (mux_o_WB_0),
-       .take_branch (take_branch_0),
-       .csr_id_flush (csr_id_flush),
-       .stall_EX (stall_EX_0),
-       .misaligned_access (misaligned_access_0),
-       .IDEX_preg_rs1 (IDEX_preg_rs1_0),
-       .IDEX_preg_rs2 (IDEX_preg_rs2_0),
-       .stall_ID (stall_ID_0),
-       .rs1_ID (rs1_ID_0),
-       .rs2_ID (rs2_ID_0),
-       .IDEX_preg_data1 (IDEX_preg_data_1_out_0),
-       .IDEX_preg_data2 (IDEX_preg_data_2_out_0),
-       
-       //issue unit//
-       .issue_stall_0(issue_stall_0),
-       .stall_IF(stall_IF_0),
-      
-       // dual hazard
-       .priority_out(priority_out),
-       .rd_ID(rd_ID_0),
-       .funct3_0(funct3_0),
-       .opcode_0(opcode_0),
-       
-       // pc_logic
-       .branch_target_addr(branch_target_addr),
-       .pc_i(pc_i),
-       .pc_o(pc_o)
-       );
+    //Interrupts
+    .meip_i(meip_i),
+    .mtip_i(mtip_i),
+    .msip_i(msip_i),
+    .fast_irq_i(fast_irq_i),
+    .irq_ack_o(irq_ack_o),
+    
+    ////////register bank/////////
+    .rf_wen_WB (rf_wen_WB_0),
+    .rd_WB (rd_WB_0),
+    .mux_o_WB (mux_o_WB_0),
+    .take_branch (take_branch_0),
+    .csr_id_flush (csr_id_flush),
+    .stall_EX (stall_EX_0),
+    .misaligned_access (misaligned_access_0),
+    .IDEX_preg_rs1 (IDEX_preg_rs1_0),
+    .IDEX_preg_rs2 (IDEX_preg_rs2_0),
+    .stall_ID (stall_ID_0),
+    .rs1_ID (rs1_ID_0),
+    .rs2_ID (rs2_ID_0),
+    .IDEX_preg_data1 (IDEX_preg_data_1_out_0),
+    .IDEX_preg_data2 (IDEX_preg_data_2_out_0),
+    
+    //issue unit//
+    .issue_stall_0(issue_stall_0),
+    .stall_IF(stall_IF_0),
+    .priority(priority_out_to_core_0),
+    
+    // dual hazard
+    .priority_out(priority_out_to_dual_hazard_unit),
+    .rd_ID(rd_ID_0),
+    .funct3_0(funct3_0),
+    .opcode_0(opcode_0),
+    
+    // pc_logic
+    .branch_target_addr(branch_target_addr),
+    .pc_i(pc_i),
+    .pc_o(pc_o),
+
+    // dual forwarding unit
+    .rs1_EX(rs1_EX_0),
+    .rs2_EX(rs2_EX_0),
+    .rd_MEM(rd_MEM_0),
+    // .rd_WB(rd_WB_0), // already connected
+    .wb_MEM(wb_MEM_0),
+    // .rf_wen_WB(rf_wen_WB_0), // already connected
+    .mux2_ctrl_EX(mux2_ctrl_EX_0),
+    .mux4_ctrl_EX(mux4_ctrl_EX_0)
+    );
  
 
 
 core_1    #(.reset_vector(reset_vector))
-        core1(
-        //Clock and reset signals.
-        .clk_i(clk_i),
-        .reset_i(reset_i), //active-low, asynchronous reset
+    core1(
+    //Clock and reset signals.
+    .clk_i(clk_i),
+    .reset_i(reset_i), //active-low, asynchronous reset
 
-        //Data memory interface
-        .data_addr_o(data_addr_o),
-        .data_i(data_i),
-        .data_o(data_o),
-        .data_wmask_o(data_wmask_o),
-        .data_wen_o(data_wen_o), //active-low
-        .data_req_o(data_req_o),
-        .data_stall_i(data_stall_i),
-        .data_err_i(data_err_i),
+    //Data memory interface
+    .data_addr_o(data_addr_o),
+    .data_i(data_i),
+    .data_o(data_o),
+    .data_wmask_o(data_wmask_o),
+    .data_wen_o(data_wen_o), //active-low
+    .data_req_o(data_req_o),
+    .data_stall_i(data_stall_i),
+    .data_err_i(data_err_i),
 
-        //Instruction memory interface
-        //.instr_addr_o(instr_addr_o),
-        .instr_i(instr_i_1),
-        .instr_access_fault_i(instr_access_fault_i),
+    //Instruction memory interface
+    //.instr_addr_o(instr_addr_o),
+    .instr_i(instr_i_1),
+    .instr_access_fault_i(instr_access_fault_i),
 
-        //Interrupts
-        .meip_i(meip_i),
-        .mtip_i(mtip_i),
-        .msip_i(msip_i),
-        .fast_irq_i(fast_irq_i),
-        .irq_ack_o(irq_ack_o),
-        
-        ////////register bank/////////
-       .rf_wen_WB (rf_wen_WB_1),
-       .rd_WB (rd_WB_1),
-       .mux_o_WB (mux_o_WB_1),
-       .take_branch (take_branch_1),
-       .csr_id_flush (csr_id_flush),
-       .stall_EX (stall_EX_1),
-       .misaligned_access (misaligned_access_1),
-       .IDEX_preg_rs1 (IDEX_preg_rs1_1),
-       .IDEX_preg_rs2 (IDEX_preg_rs2_1),
-       .stall_ID (stall_ID_1),
-       .rs1_ID (rs1_ID_1),
-       .rs2_ID (rs2_ID_1),
-       .IDEX_preg_data1 (IDEX_preg_data_1_out_1),
-       .IDEX_preg_data2 (IDEX_preg_data_2_out_1),
-        
-        //issue unit//
-       .issue_stall_1(issue_stall_1),
-       .stall_IF(stall_IF_1),
-       
-       //dual hazard
-       .rd_ID(rd_ID_1),
-       .funct3_1(funct3_1),
-       .opcode_1(opcode_1)
-        );
+    //Interrupts
+    .meip_i(meip_i),
+    .mtip_i(mtip_i),
+    .msip_i(msip_i),
+    .fast_irq_i(fast_irq_i),
+    .irq_ack_o(irq_ack_o),
+    
+    ////////register bank/////////
+    .rf_wen_WB (rf_wen_WB_1),
+    // .rd_WB (rd_WB_1), // already connected
+    .mux_o_WB (mux_o_WB_1),
+    .take_branch (take_branch_0),
+    .csr_id_flush (csr_id_flush),
+    .stall_EX (stall_EX_1),
+    .misaligned_access (misaligned_access_1),
+    .IDEX_preg_rs1 (IDEX_preg_rs1_1),
+    .IDEX_preg_rs2 (IDEX_preg_rs2_1),
+    .stall_ID (stall_ID_1),
+    .rs1_ID (rs1_ID_1),
+    .rs2_ID (rs2_ID_1),
+    .IDEX_preg_data1 (IDEX_preg_data_1_out_1),
+    .IDEX_preg_data2 (IDEX_preg_data_2_out_1),
+    
+    //issue unit//
+    .issue_stall_1(issue_stall_1),
+    .stall_IF(stall_IF_1),
+    
+    //dual hazard
+    .rd_ID(rd_ID_1),
+    .funct3_1(funct3_1),
+    .opcode_1(opcode_1),
+
+    // dual forwarding unit
+    .rs1_EX(rs1_EX_1),
+    .rs2_EX(rs2_EX_1),
+    .rd_MEM(rd_MEM_1),
+    .rd_WB(rd_WB_1),
+    .wb_MEM(wb_MEM_1),
+    // .rf_wen_WB(rf_wen_WB_1), // already connected
+    .mux2_ctrl_EX(mux2_ctrl_EX_1),
+    .mux4_ctrl_EX(mux4_ctrl_EX_1)
+    );
  
 reg_bank REG_BANK( 
-                 .clk_i(clk_i),
-                 .reset_i(reset_i),
+    .clk_i(clk_i),
+    .reset_i(reset_i),
+    
+    .rf_wen_WB_0(rf_wen_WB_0),
+    .rf_wen_WB_1(rf_wen_WB_1),
+    
+    .rd_WB_0(rd_WB_0),
+    .rd_WB_1(rd_WB_1),
+    
+    .mux_o_WB_0(mux_o_WB_0),
+    .mux_o_WB_1(mux_o_WB_1),
+    .take_branch_0(take_branch_0),
+    .csr_id_flush(csr_id_flush),
+    
+    .stall_EX_0(stall_EX_0),
+    .stall_EX_1(stall_EX_1),
+    
+    .misaligned_access_0(misaligned_access_0),
+    .misaligned_access_1(misaligned_access_1),
+    .IDEX_preg_rs1_0(IDEX_preg_rs1_0),
+    .IDEX_preg_rs2_0(IDEX_preg_rs2_0),
+    
+    .IDEX_preg_rs1_1(IDEX_preg_rs1_1),
+    .IDEX_preg_rs2_1(IDEX_preg_rs2_1),
+    
+    .stall_ID_0(stall_ID_0),
+    .stall_ID_1(stall_ID_1),
                  
-                 .rf_wen_WB_0(rf_wen_WB_0),
-                 .rf_wen_WB_1(rf_wen_WB_1),
-                 
-                 .rd_WB_0(rd_WB_0),
-                 .rd_WB_1(rd_WB_1),
-                 
-                 .mux_o_WB_0(mux_o_WB_0),
-                 .mux_o_WB_1(mux_o_WB_1),
-                 .take_branch_0(take_branch_0),
-                 .csr_id_flush(csr_id_flush),
-                 
-                 .stall_EX_0(stall_EX_0),
-                 .stall_EX_1(stall_EX_1),
-                 
-                 .misaligned_access_0(misaligned_access_0),
-                 .misaligned_access_1(misaligned_access_1),
-                 .IDEX_preg_rs1_0(IDEX_preg_rs1_0),
-                 .IDEX_preg_rs2_0(IDEX_preg_rs2_0),
-                 
-                 .IDEX_preg_rs1_1(IDEX_preg_rs1_1),
-                 .IDEX_preg_rs2_1(IDEX_preg_rs2_1),
-                 
-                 .stall_ID_0(stall_ID_0),
-                 .stall_ID_1(stall_ID_1),
-                 
-                 .rs1_ID_0(rs1_ID_0),
-                 .rs2_ID_0(rs2_ID_1),
-                 
-                 .rs1_ID_1(rs1_ID_1),
-                 .rs2_ID_1(rs2_ID_1),
-                 
-                 .IDEX_preg_data_1_out_0(IDEX_preg_data_1_out_0),
-                 .IDEX_preg_data_1_out_1(IDEX_preg_data_1_out_1),
-                 .IDEX_preg_data_2_out_0(IDEX_preg_data_2_out_0),
-                 .IDEX_preg_data_2_out_1(IDEX_preg_data_2_out_1)
-                 );
+    .rs1_ID_0(rs1_ID_0),
+    .rs2_ID_0(rs2_ID_1),
+    
+    .rs1_ID_1(rs1_ID_1),
+    .rs2_ID_1(rs2_ID_1),
+    
+    .IDEX_preg_data_1_out_0(IDEX_preg_data_1_out_0),
+    .IDEX_preg_data_1_out_1(IDEX_preg_data_1_out_1),
+    .IDEX_preg_data_2_out_0(IDEX_preg_data_2_out_0),
+    .IDEX_preg_data_2_out_1(IDEX_preg_data_2_out_1)
+    );
 
 reg data_cyc;
 always @(posedge data_wb_clk_i or posedge data_wb_rst_i)
@@ -277,41 +320,70 @@ assign instr_i_1_tmp = inst_wb_dat_i_1;
 assign instr_access_fault_i = inst_wb_err_i;
 
 issue_unit ISSUE_UNIT(
-     .instr_i_tmp(instr_i_tmp),
-     .instr_i_1_tmp(instr_i_1_tmp),
-     .stall_IF_0(stall_IF_0),
-     .stall_IF_1(stall_IF_1),
-     .stall_IF_dual(stall_IF_dual),
-     .issue_stall_0(issue_stall_0),
-     .issue_stall_1(issue_stall_1),
-     .instr_i(instr_i),
-     .instr_i_1(instr_i_1),
-     .priority(priority_out),
-     .pc_increment(pc_increment) // goes to pc logic
-    );
+    .instr_i_tmp(instr_i_tmp),
+    .instr_i_1_tmp(instr_i_1_tmp),
+    .stall_IF_0(stall_IF_0),
+    .stall_IF_1(stall_IF_1),
+    .stall_IF_dual(stall_IF_dual),
+    .issue_stall_0(issue_stall_0),
+    .issue_stall_1(issue_stall_1),
+    .instr_i(instr_i),
+    .instr_i_1(instr_i_1),
+    .priority(priority_out_to_core_0),
+    .pc_increment(pc_increment) // goes to pc logic
+);
+
 dual_hazard_unit DUAL_HAZARD_UNIT(
-     .priority(priority_out),
-     .rs1_ID_0(rs1_ID_0),
-     .rs2_ID_0(rs2_ID_0),
-     .rd_ID_0(rd_ID_0),
-     .opcode_0(opcode_0),
-     .funct3_0(funct3_0),
-     .rs1_ID_1(rs1_ID_1),
-     .rs2_ID_1(rs2_ID_1),
-     .rd_ID_1(rd_ID_1),
-     .opcode_1(opcode_1),
-     .funct3_1(funct3_1),
-     .stall_IF_dual(stall_IF_dual)
+    .priority(priority_out_to_dual_hazard_unit),
+    .rs1_ID_0(rs1_ID_0),
+    .rs2_ID_0(rs2_ID_0),
+    .rd_ID_0(rd_ID_0),
+    .opcode_0(opcode_0),
+    .funct3_0(funct3_0),
+    .rs1_ID_1(rs1_ID_1),
+    .rs2_ID_1(rs2_ID_1),
+    .rd_ID_1(rd_ID_1),
+    .opcode_1(opcode_1),
+    .funct3_1(funct3_1),
+    .stall_IF_dual(stall_IF_dual)
 );
+
 pc_logic PC_LOGIC ( 
-         .reset_i(reset_i),
-	     .take_branch_0(take_branch_0),
-	     .stall_IF_0(stall_IF_0),
-	     .stall_IF_1(stall_IF_1),
-	     .stall_IF_dual(stall_IF_dual),
-	     .branch_target_addr_0(branch_target_addr),
-	     .pc_o(pc_o), // comes from core 0
-	     .pc_increment(pc_increment),
-	     .pc_i(pc_i) // goes to core 0
+    .reset_i(reset_i),
+	.take_branch_0(take_branch_0),
+	.stall_IF_0(stall_IF_0),
+	.stall_IF_1(stall_IF_1),
+	.stall_IF_dual(stall_IF_dual),
+	.branch_target_addr_0(branch_target_addr),
+	.pc_o(pc_o), // comes from core 0
+	.pc_increment(pc_increment),
+	.pc_i(pc_i) // goes to core 0
 );
+
+dual_forwarding_unit DUAL_FORWARDING_UNIT (
+    // input signals for core_0
+    .rs1_0(rs1_EX_0),
+    .rs2_0(rs2_EX_0),
+    .exmem_rd_0(rd_MEM_0),
+    .memwb_rd_0(rd_WB_0),
+    .exmem_wb_0(wb_MEM_0[3]), 
+    .memwb_wb_0(rf_wen_WB_0),
+
+    // input signals for core_1
+    .rs1_1(rs1_EX_1),
+    .rs2_1(rs2_EX_1),
+    .exmem_rd_1(rd_MEM_1),
+    .memwb_rd_1(rd_WB_1),
+    .exmem_wb_1(wb_MEM_1[3]), 
+    .memwb_wb_1(rf_wen_WB_1),
+
+    // output signals for core_0
+    .mux1_ctrl_0(mux2_ctrl_EX_0), //control signal for mux2 in EX
+    .mux2_ctrl_0(mux4_ctrl_EX_0), //control signal for mux4 in EX
+
+    // output signals for core_1
+    .mux1_ctrl_1(mux2_ctrl_EX_1), //control signal for mux2 in EX
+    .mux2_ctrl_1(mux4_ctrl_EX_1) //control signal for mux4 in EX
+);
+
 endmodule
