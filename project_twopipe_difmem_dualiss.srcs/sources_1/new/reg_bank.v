@@ -1,5 +1,5 @@
 `timescale 1ns / 1ps
-
+// aykut//
 module reg_bank(input clk_i,
                 input reset_i,
                 
