@@ -1,0 +1,158 @@
+
+basic_arithmetic.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .init:
+
+00000000 <_start>:
+   0:	00002117          	auipc	sp,0x2
+   4:	ffc10113          	add	sp,sp,-4 # 1ffc <__stack_top>
+   8:	00010433          	add	s0,sp,zero
+   c:	0840006f          	j	90 <main>
+
+Disassembly of section .text:
+
+00000010 <basic_arithmetic>:
+  10:	fd010113          	add	sp,sp,-48
+  14:	02812623          	sw	s0,44(sp)
+  18:	03010413          	add	s0,sp,48
+  1c:	fea42623          	sw	a0,-20(s0)
+  20:	feb42423          	sw	a1,-24(s0)
+  24:	fec42223          	sw	a2,-28(s0)
+  28:	fed42023          	sw	a3,-32(s0)
+  2c:	fce42e23          	sw	a4,-36(s0)
+  30:	fec42703          	lw	a4,-20(s0)
+  34:	fe842783          	lw	a5,-24(s0)
+  38:	00f70733          	add	a4,a4,a5
+  3c:	000027b7          	lui	a5,0x2
+  40:	e0e7a023          	sw	a4,-512(a5) # 1e00 <e>
+  44:	fe842703          	lw	a4,-24(s0)
+  48:	fe442783          	lw	a5,-28(s0)
+  4c:	40f70733          	sub	a4,a4,a5
+  50:	000027b7          	lui	a5,0x2
+  54:	e0e7a223          	sw	a4,-508(a5) # 1e04 <h>
+  58:	fe442703          	lw	a4,-28(s0)
+  5c:	fe042783          	lw	a5,-32(s0)
+  60:	00f70733          	add	a4,a4,a5
+  64:	000027b7          	lui	a5,0x2
+  68:	e0e7a423          	sw	a4,-504(a5) # 1e08 <k>
+  6c:	fe042703          	lw	a4,-32(s0)
+  70:	fdc42783          	lw	a5,-36(s0)
+  74:	40f70733          	sub	a4,a4,a5
+  78:	000027b7          	lui	a5,0x2
+  7c:	e0e7a623          	sw	a4,-500(a5) # 1e0c <l>
+  80:	00000013          	nop
+  84:	02c12403          	lw	s0,44(sp)
+  88:	03010113          	add	sp,sp,48
+  8c:	00008067          	ret
+
+00000090 <main>:
+  90:	fe010113          	add	sp,sp,-32
+  94:	00112e23          	sw	ra,28(sp)
+  98:	00812c23          	sw	s0,24(sp)
+  9c:	02010413          	add	s0,sp,32
+  a0:	00c00713          	li	a4,12
+  a4:	01b00693          	li	a3,27
+  a8:	00f00613          	li	a2,15
+  ac:	02100593          	li	a1,33
+  b0:	00400513          	li	a0,4
+  b4:	f5dff0ef          	jal	10 <basic_arithmetic>
+  b8:	000027b7          	lui	a5,0x2
+  bc:	01078793          	add	a5,a5,16 # 2010 <__stack_top+0x14>
+  c0:	fef42623          	sw	a5,-20(s0)
+  c4:	000027b7          	lui	a5,0x2
+  c8:	e007a703          	lw	a4,-512(a5) # 1e00 <e>
+  cc:	02500793          	li	a5,37
+  d0:	04f71263          	bne	a4,a5,114 <main+0x84>
+  d4:	000027b7          	lui	a5,0x2
+  d8:	e047a703          	lw	a4,-508(a5) # 1e04 <h>
+  dc:	01200793          	li	a5,18
+  e0:	02f71a63          	bne	a4,a5,114 <main+0x84>
+  e4:	000027b7          	lui	a5,0x2
+  e8:	e087a703          	lw	a4,-504(a5) # 1e08 <k>
+  ec:	02a00793          	li	a5,42
+  f0:	02f71263          	bne	a4,a5,114 <main+0x84>
+  f4:	000027b7          	lui	a5,0x2
+  f8:	e0c7a703          	lw	a4,-500(a5) # 1e0c <l>
+  fc:	00f00793          	li	a5,15
+ 100:	00f71a63          	bne	a4,a5,114 <main+0x84>
+ 104:	fec42783          	lw	a5,-20(s0)
+ 108:	00100713          	li	a4,1
+ 10c:	00e7a023          	sw	a4,0(a5)
+ 110:	00c0006f          	j	11c <main+0x8c>
+ 114:	fec42783          	lw	a5,-20(s0)
+ 118:	0007a023          	sw	zero,0(a5)
+ 11c:	00000793          	li	a5,0
+ 120:	00078513          	mv	a0,a5
+ 124:	01c12083          	lw	ra,28(sp)
+ 128:	01812403          	lw	s0,24(sp)
+ 12c:	02010113          	add	sp,sp,32
+ 130:	00008067          	ret
+
+Disassembly of section .eh_frame:
+
+00000134 <__DATA_BEGIN__-0x1028>:
+ 134:	0010                	.2byte	0x10
+ 136:	0000                	.2byte	0x0
+ 138:	0000                	.2byte	0x0
+ 13a:	0000                	.2byte	0x0
+ 13c:	00527a03          	.4byte	0x527a03
+ 140:	7c01                	.2byte	0x7c01
+ 142:	0101                	.2byte	0x101
+ 144:	00020d1b          	.4byte	0x20d1b
+ 148:	0010                	.2byte	0x10
+ 14a:	0000                	.2byte	0x0
+ 14c:	0018                	.2byte	0x18
+ 14e:	0000                	.2byte	0x0
+ 150:	feb0                	.2byte	0xfeb0
+ 152:	ffff                	.2byte	0xffff
+ 154:	0010                	.2byte	0x10
+ 156:	0000                	.2byte	0x0
+ 158:	0000                	.2byte	0x0
+	...
+
+Disassembly of section .sbss:
+
+00001e00 <e>:
+    1e00:	0000                	.2byte	0x0
+	...
+
+00001e04 <h>:
+    1e04:	0000                	.2byte	0x0
+	...
+
+00001e08 <k>:
+    1e08:	0000                	.2byte	0x0
+	...
+
+00001e0c <l>:
+    1e0c:	0000                	.2byte	0x0
+	...
+
+Disassembly of section .comment:
+
+00000000 <.comment>:
+   0:	3a434347          	.4byte	0x3a434347
+   4:	2820                	.2byte	0x2820
+   6:	2029                	.2byte	0x2029
+   8:	3231                	.2byte	0x3231
+   a:	322e                	.2byte	0x322e
+   c:	302e                	.2byte	0x302e
+	...
+
+Disassembly of section .riscv.attributes:
+
+00000000 <.riscv.attributes>:
+   0:	1b41                	.2byte	0x1b41
+   2:	0000                	.2byte	0x0
+   4:	7200                	.2byte	0x7200
+   6:	7369                	.2byte	0x7369
+   8:	01007663          	bgeu	zero,a6,14 <basic_arithmetic+0x4>
+   c:	0011                	.2byte	0x11
+   e:	0000                	.2byte	0x0
+  10:	1004                	.2byte	0x1004
+  12:	7205                	.2byte	0x7205
+  14:	3376                	.2byte	0x3376
+  16:	6932                	.2byte	0x6932
+  18:	7032                	.2byte	0x7032
+  1a:	0031                	.2byte	0x31
