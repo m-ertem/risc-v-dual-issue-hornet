@@ -59,6 +59,8 @@ wire        instr_access_fault_i;
 
 wire [31:0] mux_o_WB_0;
 wire [31:0] mux_o_WB_1;
+wire [31:0] aluout_MEM_0;
+wire [31:0] aluout_MEM_1;
 wire rf_wen_WB_0;
 wire rf_wen_WB_1;
 wire [4:0] rd_WB;
@@ -86,7 +88,7 @@ wire [31:0] pc_increment;
 wire [31:0] branch_target_addr;
 
 // issue unit - dual hazard unit signals
-wire stall_IF_dual, stall_IF_0, stall_IF_1, take_branch_0;
+wire dual_hazard_stall_0, dual_hazard_stall_1, stall_IF_0, stall_IF_1, take_branch_0, priority_ID;
 wire priority_out_to_core_0;
 wire priority_out_to_dual_hazard_unit;
 wire funct3_0, funct3_1;
@@ -100,14 +102,17 @@ wire [4:0]  rd_MEM_0;
 // wire [4:0]  rd_WB_0; // already declared
 wire [6:0] wb_MEM_0;
 // wire       rf_wen_WB_0; // already declared
-wire [1:0] mux2_ctrl_EX_0,  mux4_ctrl_EX_0;
+wire [2:0] mux2_ctrl_EX_0,  mux4_ctrl_EX_0;
 // -- for core_1
 wire [4:0]  rs1_EX_1, rs2_EX_1;
 wire [4:0]  rd_MEM_1;
 // wire [4:0]  rd_WB_1; already declared
 wire [6:0] wb_MEM_1;
 // wire       rf_wen_WB_1; // already declared
-wire [1:0] mux2_ctrl_EX_1,  mux4_ctrl_EX_1;
+wire [2:0] mux2_ctrl_EX_1,  mux4_ctrl_EX_1;
+
+//
+wire [31:0] pc_i_1;
 //---------------------------------------//
 
 core_0    #(.reset_vector(reset_vector))
@@ -164,6 +169,9 @@ core_0    #(.reset_vector(reset_vector))
     .rd_ID(rd_ID_0),
     .funct3_0(funct3_0),
     .opcode_0(opcode_0),
+    .dual_hazard_stall_0(dual_hazard_stall_0),
+    .dual_hazard_stall_1(dual_hazard_stall_1),
+    .priority_ID(priority_ID),
     
     // pc_logic
     .branch_target_addr(branch_target_addr),
@@ -177,8 +185,13 @@ core_0    #(.reset_vector(reset_vector))
     // .rd_WB(rd_WB_0), // already connected
     .wb_MEM(wb_MEM_0),
     // .rf_wen_WB(rf_wen_WB_0), // already connected
+    .priority_MEM(priority_MEM),
+    .priority_WB(priority_WB),
+    .aluout_MEM(aluout_MEM_0),
+    .aluout_MEM_1(aluout_MEM_1),
     .mux2_ctrl_EX(mux2_ctrl_EX_0),
-    .mux4_ctrl_EX(mux4_ctrl_EX_0)
+    .mux4_ctrl_EX(mux4_ctrl_EX_0),
+    .mux_o_WB_1(mux_o_WB_1)
     );
  
 
@@ -235,6 +248,8 @@ core_1    #(.reset_vector(reset_vector))
     .rd_ID(rd_ID_1),
     .funct3_1(funct3_1),
     .opcode_1(opcode_1),
+    .L_ID(L_ID),
+    .dual_hazard_stall_1(dual_hazard_stall_1),
 
     // dual forwarding unit
     .rs1_EX(rs1_EX_1),
@@ -243,10 +258,18 @@ core_1    #(.reset_vector(reset_vector))
     .rd_WB(rd_WB_1),
     .wb_MEM(wb_MEM_1),
     // .rf_wen_WB(rf_wen_WB_1), // already connected
+    .aluout_MEM(aluout_MEM_1),
+    .aluout_MEM_0(aluout_MEM_0),
     .mux2_ctrl_EX(mux2_ctrl_EX_1),
-    .mux4_ctrl_EX(mux4_ctrl_EX_1)
+    .mux4_ctrl_EX(mux4_ctrl_EX_1),
+    .mux_o_WB_0(mux_o_WB_0),
+
+    //
+    .pc_i(pc_i_1)
     );
- 
+
+assign pc_i_1 = priority_out_to_core_0 ? pc_i : pc_i + 4;
+
 reg_bank REG_BANK( 
     .clk_i(clk_i),
     .reset_i(reset_i),
@@ -324,7 +347,8 @@ issue_unit ISSUE_UNIT(
     .instr_i_1_tmp(instr_i_1_tmp),
     .stall_IF_0(stall_IF_0),
     .stall_IF_1(stall_IF_1),
-    .stall_IF_dual(stall_IF_dual),
+    .dual_hazard_stall_0(dual_hazard_stall_0),
+    .dual_hazard_stall_1(dual_hazard_stall_1),
     .issue_stall_0(issue_stall_0),
     .issue_stall_1(issue_stall_1),
     .instr_i(instr_i),
@@ -334,6 +358,8 @@ issue_unit ISSUE_UNIT(
 );
 
 dual_hazard_unit DUAL_HAZARD_UNIT(
+    .clk_i(clk_i),
+    .reset_i(reset_i),
     .priority(priority_out_to_dual_hazard_unit),
     .rs1_ID_0(rs1_ID_0),
     .rs2_ID_0(rs2_ID_0),
@@ -345,7 +371,10 @@ dual_hazard_unit DUAL_HAZARD_UNIT(
     .rd_ID_1(rd_ID_1),
     .opcode_1(opcode_1),
     .funct3_1(funct3_1),
-    .stall_IF_dual(stall_IF_dual)
+    .L_ID_1(L_ID),
+    .dual_hazard_stall_0(dual_hazard_stall_0),
+    .dual_hazard_stall_1(dual_hazard_stall_1),
+    .priority_ID(priority_ID)
 );
 
 pc_logic PC_LOGIC ( 
@@ -353,7 +382,8 @@ pc_logic PC_LOGIC (
 	.take_branch_0(take_branch_0),
 	.stall_IF_0(stall_IF_0),
 	.stall_IF_1(stall_IF_1),
-	.stall_IF_dual(stall_IF_dual),
+	.dual_hazard_stall_0(dual_hazard_stall_0),
+    .dual_hazard_stall_1(dual_hazard_stall_1),
 	.branch_target_addr_0(branch_target_addr),
 	.pc_o(pc_o), // comes from core 0
 	.pc_increment(pc_increment),
@@ -376,6 +406,9 @@ dual_forwarding_unit DUAL_FORWARDING_UNIT (
     .memwb_rd_1(rd_WB_1),
     .exmem_wb_1(wb_MEM_1[3]), 
     .memwb_wb_1(rf_wen_WB_1),
+
+    .priority_MEM(priority_MEM),
+    .priority_WB(priority_WB),
 
     // output signals for core_0
     .mux1_ctrl_0(mux2_ctrl_EX_0), //control signal for mux2 in EX

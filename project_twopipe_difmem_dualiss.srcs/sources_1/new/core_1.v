@@ -37,10 +37,13 @@ module core_1(input reset_i, //active-low reset
     
     input  issue_stall_1,  /*comes from issue unit */ 
     output stall_IF,  /*goes to issue unit*/  
+
+    // dual hazard unit signals
+    input dual_hazard_stall_1,
     output [4:0] opcode_1, 
     output funct3_1,  
-    
     output [4:0] rd_ID,
+    output L_ID,
     
     // pc_logic
     // output reg [31:0] pc_o,
@@ -52,8 +55,11 @@ module core_1(input reset_i, //active-low reset
     // output [4:0] rd_WB, // already declared
     output [6:0] wb_MEM,
     // output       rf_wen_WB, // already declared
-    input [1:0]  mux2_ctrl_EX,
-    input [1:0]  mux4_ctrl_EX,       
+    output [31:0]aluout_MEM,
+    input [31:0] aluout_MEM_0,
+    input [2:0]  mux2_ctrl_EX,
+    input [2:0]  mux4_ctrl_EX,    
+    input [31:0] mux_o_WB_0,
 
     // take_branch signal from core_0    
     input        take_branch
@@ -108,6 +114,9 @@ wire [20:0] mux3_o_ID; //EX field
 wire [29:0] imm_dec_i; //immediate decoder input
 wire [31:0] imm_dec_o; //immediate decoder output
 wire [31:0] pc_ID; //pc value
+
+// dual hazard unit signals
+wire [6:0] wb_ID;
 
 //pipeline registers
 reg [31:0] IDEX_preg_imm;
@@ -294,7 +303,7 @@ csr_unit CSR_UNIT(.clk_i(clk_i),
 //assign pc_i = reset_i ? mux4_o_IF : reset_vector;
 assign instr_addr_o = pc_i;
 
-assign stall_IF = hazard_stall | muldiv_stall_EX | misaligned_access | data_stall_i | csr_stall; // | issue_stall_1;
+assign stall_IF = hazard_stall | muldiv_stall_EX | misaligned_access | data_stall_i | csr_stall | dual_hazard_stall_1;
 
 always @(posedge clk_i or negedge reset_i)
 begin
@@ -343,29 +352,31 @@ end
 
 //ID STAGE---------------------------------------------------------------------------------
 //assign fields
-assign rs1_ID       = IFID_preg_instr[19:15];
-assign rs2_ID       = IFID_preg_instr[24:20];
-assign rd_ID        = IFID_preg_instr[11:7];
-assign pc_ID        = IFID_preg_pc;
-assign imm_dec_i    = IFID_preg_instr[31:2];
-assign csr_addr_ID  = IFID_preg_instr[31:20];
+assign rs1_ID      = IFID_preg_instr[19:15];
+assign rs2_ID      = IFID_preg_instr[24:20];
+assign rd_ID       = IFID_preg_instr[11:7];
+assign pc_ID       = IFID_preg_pc;
+assign imm_dec_i   = IFID_preg_instr[31:2];
+assign csr_addr_ID = IFID_preg_instr[31:20];
 //Dual hazard
-assign opcode_1 = IFID_preg_instr[6:2];
-assign funct3_1 = IFID_preg_instr[14];
+assign opcode_1    = IFID_preg_instr[6:2];
+assign funct3_1    = IFID_preg_instr[14];
+assign wb_ID       = (!reset_i || take_branch || csr_id_flush || stall_ID) ? 7'h0c : mux1_o_ID;
+assign L_ID        = (!wb_ID[3] && wb_ID[6:5] == 2'b1) ? 1'b1 : 1'b0; //load
 //assign nets
-assign stall_ID = hazard_stall | muldiv_stall_EX | misaligned_access | data_stall_i | csr_stall; // | issue_stall_1; //TODO: move csr stall below
-assign mux_ctrl_ID = hazard_stall;
-assign csr_wen_ID = ctrl_unit_wb_csr_wen;
+assign stall_ID    = hazard_stall | muldiv_stall_EX | misaligned_access | data_stall_i | csr_stall | dual_hazard_stall_1; //TODO: move csr stall below
+assign mux_ctrl_ID = hazard_stall | dual_hazard_stall_1;
+assign csr_wen_ID  = ctrl_unit_wb_csr_wen;
 
-assign mux1_o_ID    = mux_ctrl_ID ? 7'h0c : {ctrl_unit_wb_mux,
+assign mux1_o_ID   = mux_ctrl_ID ? 7'h0c : {ctrl_unit_wb_mux,
                                              ctrl_unit_wb_sign,
                                              ctrl_unit_wb_rf_wen,
                                              ctrl_unit_wb_csr_wen,
                                              ctrl_unit_mem_len};
 
-assign mux2_o_ID    = mux_ctrl_ID ? 3'b1 : {ctrl_unit_mem_len, ctrl_unit_mem_wen};
+assign mux2_o_ID   = mux_ctrl_ID ? 3'b1 : {ctrl_unit_mem_len, ctrl_unit_mem_wen};
 
-assign mux3_o_ID    = mux_ctrl_ID ? 21'b0 : {ctrl_unit_op_div,
+assign mux3_o_ID   = mux_ctrl_ID ? 21'b0 : {ctrl_unit_op_div,
                                              ctrl_unit_op_mul,
                                              ctrl_unit_muldiv_sel,
                                              ctrl_unit_muldiv_start,
@@ -550,14 +561,18 @@ assign csr_wen_EX = wb_EX[2];
 //muxes
 assign mux1_o_EX = mux1_ctrl_EX ? pc_EX : mux2_o_EX;
 
-assign mux2_o_EX = mux2_ctrl_EX == 2'b10 ? aluout_MEM
-                 : mux2_ctrl_EX == 2'b01 ? mux_o_WB
+assign mux2_o_EX = mux2_ctrl_EX == 3'b100 ? aluout_MEM_0
+                 : mux2_ctrl_EX == 3'b011 ? mux_o_WB_0
+                 : mux2_ctrl_EX == 3'b010 ? aluout_MEM
+                 : mux2_ctrl_EX == 3'b001 ? mux_o_WB
                  : data1_EX;
 
 assign mux3_o_EX =  mux3_ctrl_EX ? imm_EX : mux4_o_EX;
 
-assign mux4_o_EX = mux4_ctrl_EX == 2'b10 ? data2_EX
-                 : mux4_ctrl_EX == 2'b01 ? mux_o_WB
+assign mux4_o_EX = mux4_ctrl_EX == 3'b100 ? aluout_MEM_0
+                 : mux4_ctrl_EX == 3'b011 ? mux_o_WB_0
+                 : mux4_ctrl_EX == 3'b010 ? data2_EX
+                 : mux4_ctrl_EX == 3'b001 ? mux_o_WB
                  : aluout_MEM;
 
 assign mux5_o_EX = mux5_ctrl_EX ? pc_EX	 : mux2_o_EX;
