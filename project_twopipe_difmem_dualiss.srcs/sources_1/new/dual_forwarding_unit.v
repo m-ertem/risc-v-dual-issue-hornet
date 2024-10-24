@@ -19,200 +19,202 @@ module dual_forwarding_unit(
     input [4:0] memwb_rd_1,
     input exmem_wb_1, memwb_wb_1,
 
-    output reg [1:0] mux1_ctrl_0, //control signal for mux2 in EX
-    output reg [1:0] mux2_ctrl_0, //control signal for mux4 in EX
+    input priority_MEM,
+    input priority_WB,
+
+    output reg [2:0] mux1_ctrl_0, //control signal for mux2 in EX
+    output reg [2:0] mux2_ctrl_0, //control signal for mux4 in EX
     
-    output reg [1:0] mux1_ctrl_1, //control signal for mux2 in EX
-    output reg [1:0] mux2_ctrl_1  //control signal for mux4 in EX
+    output reg [2:0] mux1_ctrl_1, //control signal for mux2 in EX
+    output reg [2:0] mux2_ctrl_1  //control signal for mux4 in EX
 );
 
 always @(*)
 begin
     if(!exmem_wb_0 || !exmem_wb_1 || !memwb_wb_0 || !memwb_wb_1)
     begin
-        if(!exmem_wb_0) //forward from MEM_0 stage
+        if(!exmem_wb_0 && !priority_MEM) //forward from MEM_0 stage
         begin
             //forward rs1_MEM_0 to EX_0 stage
             if(rs1_0 == exmem_rd_0 && rs1_0 != 5'b0)
-                mux1_ctrl_0 = 2'b10;
+                mux1_ctrl_0 = 3'b10;
             else if(!memwb_wb_0)
             begin
                 if(rs1_0 == memwb_rd_0 && rs1_0 != 5'b0)
-                    mux1_ctrl_0 = 2'b1;
+                    mux1_ctrl_0 = 3'b1;
                 else
-                    mux1_ctrl_0 = 2'b0;
+                    mux1_ctrl_0 = 3'b0;
             end
             else
-                mux1_ctrl_0 = 2'b0;
+                mux1_ctrl_0 = 3'b0;
 
             //forward rs1_MEM_0 to EX_1 stage
             if(rs1_1 == exmem_rd_0 && rs1_1 != 5'b0)
-                mux1_ctrl_1 = 2'b10;
+                mux1_ctrl_1 = 3'b100;
             else if(!memwb_wb_0)
             begin
                 if(rs1_1 == memwb_rd_0 && rs1_1 != 5'b0)
-                    mux1_ctrl_1 = 2'b1;
+                    mux1_ctrl_1 = 3'b11;
                 else
-                    mux1_ctrl_1 = 2'b0;
+                    mux1_ctrl_1 = 3'b0;
             end
             else
-                mux1_ctrl_0 = 2'b0;
+                mux1_ctrl_0 = 3'b0;
 
             //------------------------------------------//
 
             //forward rs2_MEM_0 to EX_0 stage
             if(rs2_0 == exmem_rd_0 && rs2_0 != 5'b0)
-                mux2_ctrl_0 = 2'b0;
+                mux2_ctrl_0 = 3'b0;
             else if(!memwb_wb_0)
             begin
                 if(rs2_0 == memwb_rd_0 && rs2_0 != 5'b0)
-                    mux2_ctrl_0 = 2'b1;
+                    mux2_ctrl_0 = 3'b1;
                 else
-                    mux2_ctrl_0 = 2'b10;
+                    mux2_ctrl_0 = 3'b10;
             end
             else
-                mux2_ctrl_0 = 2'b10;
+                mux2_ctrl_0 = 3'b10;
 
             //forward rs2_MEM_0 to EX_1 stage
             if(rs2_1 == exmem_rd_0 && rs2_1 != 5'b0)
-                mux2_ctrl_1 = 2'b0;
+                mux2_ctrl_1 = 3'b100;
             else if(!memwb_wb_0)
             begin
                 if(rs2_1 == memwb_rd_0 && rs2_1 != 5'b0)
-                    mux2_ctrl_1 = 2'b1;
+                    mux2_ctrl_1 = 3'b11;
                 else
-                    mux2_ctrl_1 = 2'b10;
+                    mux2_ctrl_1 = 3'b10;
             end
             else
-                mux2_ctrl_1 = 2'b10;
+                mux2_ctrl_1 = 3'b10;
         end
 
         //------------------------------------------//
 
-        else if(!memwb_wb_0) //forward from WB_0 stage
-        begin
-            //forward rs1_WB_0 to EX_0 stage
-            if(rs1_0 == memwb_rd_0 && rs1_0 != 5'b0)
-                mux1_ctrl_0 = 2'b1;
-            else
-                mux1_ctrl_0 = 2'b0;
-
-            //forward rs2_WB_0 to EX_0 stage
-            if(rs2_0 == memwb_rd_0 && rs2_0 != 5'b0)
-                mux2_ctrl_0 = 2'b1;
-            else
-                mux2_ctrl_0 = 2'b10;
-
-            //forward rs1_WB_0 to EX_1 stage
-            if(rs1_1 == memwb_rd_0 && rs1_1 != 5'b0)
-                mux1_ctrl_1 = 2'b1;
-            else
-                mux1_ctrl_1 = 2'b0;
-
-            //forward rs2_WB_0 to EX_1 stage
-            if(rs2_1 == memwb_rd_0 && rs2_1 != 5'b0)
-                mux2_ctrl_1 = 2'b1;
-            else
-                mux2_ctrl_1 = 2'b10;
-        end
-
-        //------------------------------------------//
-        //------------------------------------------//
-
-        if(!exmem_wb_1) //forward from MEM_1 stage
+        else if(!exmem_wb_1 && priority_MEM) //forward from MEM_1 stage
         begin
             //forward rs1_MEM_1 to EX_0 stage
             if(rs1_0 == exmem_rd_1 && rs1_0 != 5'b0)
-                mux1_ctrl_0 = 2'b10;
+                mux1_ctrl_0 = 3'b100;
             else if(!memwb_wb_1)
             begin
                 if(rs1_0 == memwb_rd_1 && rs1_0 != 5'b0)
-                    mux1_ctrl_0 = 2'b1;
+                    mux1_ctrl_0 = 3'b11;
                 else
-                    mux1_ctrl_0 = 2'b0;
+                    mux1_ctrl_0 = 3'b0;
             end
             else
-                mux1_ctrl_0 = 2'b0;
+                mux1_ctrl_0 = 3'b0;
 
             //forward rs2_MEM_1 to EX_0 stage
             if(rs2_0 == exmem_rd_1 && rs2_0 != 5'b0)
-                mux2_ctrl_0 = 2'b10;
+                mux2_ctrl_0 = 3'b10;
             else if(!memwb_wb_1)
             begin
                 if(rs2_0 == memwb_rd_1 && rs2_0 != 5'b0)
-                    mux2_ctrl_0 = 2'b1;
+                    mux2_ctrl_0 = 3'b11;
                 else
-                    mux2_ctrl_0 = 2'b0;
+                    mux2_ctrl_0 = 3'b100;
             end
             else
-                mux2_ctrl_0 = 2'b0;
+                mux2_ctrl_0 = 3'b100;
 
             //------------------------------------------//
 
             //forward rs1_MEM_1 to EX_1 stage
             if(rs1_1 == exmem_rd_1 && rs1_1 != 5'b0)
-                mux1_ctrl_1 = 2'b0;
+                mux1_ctrl_1 = 3'b0;
             else if(!memwb_wb_1)
             begin
                 if(rs1_1 == memwb_rd_1 && rs1_1 != 5'b0)
-                    mux1_ctrl_1 = 2'b1;
+                    mux1_ctrl_1 = 3'b1;
                 else
-                    mux1_ctrl_1 = 2'b10;
+                    mux1_ctrl_1 = 3'b10;
             end
             else
-                mux1_ctrl_1 = 2'b10;
+                mux1_ctrl_1 = 3'b10;
 
             //forward rs2_MEM_1 to EX_1 stage
             if(rs2_1 == exmem_rd_1 && rs2_1 != 5'b0)
-                mux2_ctrl_1 = 2'b0;
+                mux2_ctrl_1 = 3'b0;
             else if(!memwb_wb_1)
             begin
                 if(rs2_1 == memwb_rd_1 && rs2_1 != 5'b0)
-                    mux2_ctrl_1 = 2'b1;
+                    mux2_ctrl_1 = 3'b1;
                 else
-                    mux2_ctrl_1 = 2'b10;
+                    mux2_ctrl_1 = 3'b10;
             end
             else
-                mux2_ctrl_1 = 2'b10;
+                mux2_ctrl_1 = 3'b10;
         end
 
         //------------------------------------------//
 
-        else if(!memwb_wb_0) //forward from WB_0 stage
+        else if(!memwb_wb_0 && !priority_WB) //forward from WB_0 stage
         begin
-            //forward rs_0 to EX_0 stage
+            //forward rs1_WB_0 to EX_0 stage
             if(rs1_0 == memwb_rd_0 && rs1_0 != 5'b0)
-                mux1_ctrl_0 = 2'b1;
+                mux1_ctrl_0 = 3'b1;
             else
-                mux1_ctrl_0 = 2'b0;
+                mux1_ctrl_0 = 3'b0;
 
-            //forward rs_1 to EX_0 stage
+            //forward rs2_WB_0 to EX_0 stage
             if(rs2_0 == memwb_rd_0 && rs2_0 != 5'b0)
-                mux2_ctrl_0 = 2'b1;
+                mux2_ctrl_0 = 3'b1;
             else
-                mux2_ctrl_0 = 2'b10;
+                mux2_ctrl_0 = 3'b10;
 
-            //forward rs_0 to EX_1 stage
+            //forward rs1_WB_0 to EX_1 stage
             if(rs1_1 == memwb_rd_0 && rs1_1 != 5'b0)
-                mux1_ctrl_1 = 2'b1;
+                mux1_ctrl_1 = 3'b11;
             else
-                mux1_ctrl_1 = 2'b0;
+                mux1_ctrl_1 = 3'b0;
 
-            //forward rs_1 to EX_1 stage
+            //forward rs2_WB_0 to EX_1 stage
             if(rs2_1 == memwb_rd_0 && rs2_1 != 5'b0)
-                mux2_ctrl_1 = 2'b1;
+                mux2_ctrl_1 = 3'b11;
             else
-                mux2_ctrl_1 = 2'b10;
+                mux2_ctrl_1 = 3'b10;
+        end
+
+        //------------------------------------------//
+
+        else if(!memwb_wb_1 && priority_WB) //forward from WB_1 stage
+        begin
+            //forward rs1_WB_1 to EX_0 stage
+            if(rs1_0 == memwb_rd_1 && rs1_0 != 5'b0)
+                mux1_ctrl_0 = 3'b11;
+            else
+                mux1_ctrl_0 = 3'b0;
+
+            //forward rs2_WB_1 to EX_0 stage
+            if(rs2_0 == memwb_rd_1 && rs2_0 != 5'b0)
+                mux2_ctrl_0 = 3'b11;
+            else
+                mux2_ctrl_0 = 3'b10;
+
+            //forward rs1_WB_1 to EX_1 stage
+            if(rs1_1 == memwb_rd_1 && rs1_1 != 5'b0)
+                mux1_ctrl_1 = 3'b1;
+            else
+                mux1_ctrl_1 = 3'b0;
+
+            //forward rs2_WB_1 to EX_1 stage
+            if(rs2_1 == memwb_rd_1 && rs2_1 != 5'b0)
+                mux2_ctrl_1 = 3'b1;
+            else
+                mux2_ctrl_1 = 3'b10;
         end
     end
 
 	else //no forwarding needed
 	begin
-		mux1_ctrl_0 = 2'b0;
-		mux2_ctrl_0 = 2'b10;
+		mux1_ctrl_0 = 3'b0;
+		mux2_ctrl_0 = 3'b10;
 
-		mux1_ctrl_1 = 2'b0;
-		mux2_ctrl_1 = 2'b10;
+		mux1_ctrl_1 = 3'b0;
+		mux2_ctrl_1 = 3'b10;
 	end
 end
 
