@@ -4,7 +4,8 @@ module pc_logic(
 	input take_branch_0,
 	input stall_IF_0,
 	input stall_IF_1,
-	input stall_IF_dual,
+	input dual_hazard_stall_0,
+	input dual_hazard_stall_1,
 	input [31:0] branch_target_addr_0,
 	input [31:0] pc_o, // comes from core 0
 
@@ -22,7 +23,7 @@ wire [31:0] pc_ID; //pc value
 wire mux2_ctrl_IF, mux3_ctrl_IF; // mux control signals
 wire [31:0] mux2_o_IF, mux3_o_IF, mux4_o_IF;
 
-assign mux2_ctrl_IF = 1'b0; // stall_IF_0 || stall_IF_1 || stall_IF_dual;
+assign mux2_ctrl_IF = 1'b0; // stall_IF_0 || stall_IF_1 || dual_hazard_stall;
 assign mux3_ctrl_IF = take_branch_0;
 
 //assign mux1_o_IF = mux1_ctrl_IF ? mepc : irq_addr;
