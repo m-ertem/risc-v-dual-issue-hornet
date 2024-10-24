@@ -51,7 +51,7 @@ assign   IDEX_preg_data_1_out_1  = IDEX_preg_data1_1;
 assign   IDEX_preg_data_2_out_1  = IDEX_preg_data2_1;  
 
 
-//write to register file
+// write to register file
 integer i;
 always @(negedge clk_i or negedge reset_i)
 begin
@@ -61,12 +61,13 @@ begin
 			register_bank[i] <= 32'b0; //reset all registers to 0.
 	end
 
-	else if(!rf_wen_WB_0)
-		register_bank[rd_WB_0] <= mux_o_WB_0;
-	
-	else if(!rf_wen_WB_1)
-		register_bank[rd_WB_1] <= mux_o_WB_1;	// bu iki elseif eş zamanlı olarak çalışır mı 
+	else
+        if(!rf_wen_WB_0)
+		    register_bank[rd_WB_0] <= mux_o_WB_0;
+        if(!rf_wen_WB_1)
+		    register_bank[rd_WB_1] <= mux_o_WB_1;
 end
+
  //core0 read  
 always @(posedge clk_i or negedge reset_i)
 begin
