@@ -46,15 +46,12 @@ end
 assign port1_wb_ack_o = port1_ack;
 assign port1_wb_err_o = 1'b0;
 
-
-
 reg [DATA_WIDTH-1:0] mem [0:RAM_DEPTH-1] /*verilator public*/;
 
 `ifdef FPGA_READMEM
 initial $readmemh("reset_handler.mem",mem,7424,7487);
 initial $readmemh("bootloader.mem",mem,7488,8191);
 `endif 
-
 
  // Memory Write Block Port 1
   // Write Operation : When we1 = 0, cs1 = 0
