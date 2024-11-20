@@ -14,8 +14,7 @@ module dual_hazard_unit (
     input funct3_1,
     input L_ID_1,
     output dual_hazard_stall_0,
-    output dual_hazard_stall_1,
-    output reg priority_ID
+    output dual_hazard_stall_1
 );
 
 // e�e priority 1 ise rs1_ID_0, rs2_ID_0, rd_ID_1 kar��la�t�r�lacak
@@ -46,20 +45,6 @@ assign uses_rs2_1 = opcode_1[4:0] == 5'b01000 || //store instructions
 
 always @(*)
 begin
-    if(priority==0)
-    begin
-        if(dual_hazard_stall_0) priority_ID = 1'b0;
-        else if(dual_hazard_stall_1) priority_ID = 1'b1;
-    end
-    else if(priority==1)
-    begin
-        if(dual_hazard_stall_0) priority_ID = 1'b0;
-        else if(dual_hazard_stall_1) priority_ID = 1'b1;  
-    end
-end
-
-always @(*)
-begin
     if(!rs1_ID_0 && !rs2_ID_0 && !rs1_ID_1 && !rs2_ID_1 && !rd_ID_0 && !rd_ID_1)
     begin
         stall_trigger_0 = 1'b0;
@@ -76,7 +61,7 @@ begin
 
             if(L_ID_1)
             begin
-                if((rs1_ID_0 == rd_ID_1 && uses_rs1_0) || (rs2_ID_0 == rd_ID_1 && uses_rs2_0))
+                if(((rs1_ID_0 == rd_ID_1) && uses_rs1_0 && (rs1_ID_0 != 5'b0)) || ((rs2_ID_0 == rd_ID_1) && uses_rs2_0 && (rs2_ID_0 != 5'b0)))
                     stall_trigger_0 = 1'b1;
 
                 else
@@ -86,7 +71,7 @@ begin
             begin
                 stall_trigger_0 = 1'b0;
 
-                if((rs1_ID_0 == rd_ID_1 && uses_rs1_0) || (rs2_ID_0 == rd_ID_1 && uses_rs2_0))
+                if(((rs1_ID_0 == rd_ID_1) && uses_rs1_0 && (rs1_ID_0 != 5'b0)) || ((rs2_ID_0 == rd_ID_1) && uses_rs2_0 && (rs2_ID_0 != 5'b0)))
                     stall_once_0 = 1'b1;
 
                 else
@@ -98,7 +83,7 @@ begin
             stall_once_0 = 1'b0;
             stall_trigger_0 = 1'b0;
 
-            if((rs1_ID_1 == rd_ID_0 && uses_rs1_1) || (rs2_ID_1 == rd_ID_0 && uses_rs2_1))
+            if((((rs1_ID_1 == rd_ID_0) && uses_rs1_1 && (rs1_ID_1 != 5'b0))) || ((rs2_ID_1 == rd_ID_0) && uses_rs2_1 && (rs2_ID_1 != 5'b0)))
                 stall_once_1 = 1'b1;
             else
                 stall_once_1 = 1'b0;
