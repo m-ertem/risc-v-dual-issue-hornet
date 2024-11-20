@@ -88,8 +88,8 @@ wire [31:0] pc_increment;
 wire [31:0] branch_target_addr;
 
 // issue unit - dual hazard unit signals
-wire dual_hazard_stall_0, dual_hazard_stall_1, stall_IF_0, stall_IF_1, take_branch_0, priority_ID;
-wire priority_out_to_core_0;
+wire dual_hazard_stall_0, dual_hazard_stall_1, stall_IF_0, stall_IF_1, take_branch_0;
+wire priority_out_to_core_0, priority_overwrite;
 wire priority_out_to_dual_hazard_unit;
 wire funct3_0, funct3_1;
 wire [4:0] opcode_0, opcode_1, rd_ID_1, rd_ID_0, rs1_ID_0, rs1_ID_1, rs2_ID_0, rs2_ID_1;
@@ -161,6 +161,7 @@ core_0    #(.reset_vector(reset_vector))
     
     //issue unit//
     .issue_stall_0(issue_stall_0),
+    // .priority_overwrite(priority_overwrite),
     .stall_IF(stall_IF_0),
     .priority(priority_out_to_core_0),
     
@@ -171,7 +172,6 @@ core_0    #(.reset_vector(reset_vector))
     .opcode_0(opcode_0),
     .dual_hazard_stall_0(dual_hazard_stall_0),
     .dual_hazard_stall_1(dual_hazard_stall_1),
-    .priority_ID(priority_ID),
     
     // pc_logic
     .branch_target_addr(branch_target_addr),
@@ -354,6 +354,7 @@ issue_unit ISSUE_UNIT(
     .instr_i(instr_i),
     .instr_i_1(instr_i_1),
     .priority(priority_out_to_core_0),
+    .priority_overwrite(priority_overwrite),
     .pc_increment(pc_increment) // goes to pc logic
 );
 
@@ -373,8 +374,7 @@ dual_hazard_unit DUAL_HAZARD_UNIT(
     .funct3_1(funct3_1),
     .L_ID_1(L_ID),
     .dual_hazard_stall_0(dual_hazard_stall_0),
-    .dual_hazard_stall_1(dual_hazard_stall_1),
-    .priority_ID(priority_ID)
+    .dual_hazard_stall_1(dual_hazard_stall_1)
 );
 
 pc_logic PC_LOGIC ( 
