@@ -39,12 +39,13 @@ module core_0(input reset_i, //active-low reset
             
             input  priority, // comes from issue unit
             input  issue_stall_0,  /*comes from issue unit */
+            // input  priority_overwrite,
             output stall_IF,// goes to issue unit
             
             // dual_hazard_unit signals
             input dual_hazard_stall_0,
             input dual_hazard_stall_1,
-            input priority_ID,
+            // input priority_ID,
             output priority_out, //goes to dual hazard
             
             output [4:0] opcode_0, 
@@ -86,6 +87,7 @@ reg [31:0] IFID_preg_instr;
 reg [31:0] IFID_preg_pc;
 reg        IFID_preg_dummy; //indicates if the instruction in the ID stage is dummy, i.e. a flushed instruction, nop.
 reg IFID_preg_priority;
+reg IFID_preg_priority_overwrite;
 //END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS
 
 //ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS
@@ -134,6 +136,7 @@ reg        IDEX_preg_dummy; //indicates if the instruction in the EX stage is du
 reg        IDEX_preg_mret; //driven high when the instruction in EX stage is MRET.
 reg        IDEX_preg_misaligned; //driven high when the second part of a misaligned access is being executed in EX stage.
 reg        IDEX_preg_priority;
+reg        IDEX_preg_priority_overwrite;
 
 //reg [31:0] register_bank [31:0]; //32x32 register file
 //END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS
@@ -156,6 +159,7 @@ wire [4:0]  rd_EX;
 wire [11:0] csr_addr_EX;
 wire        csr_wen_EX;
 wire        priority_EX;
+wire        priority_overwrite_EX;
 //mux signals
 // wire [1:0]  mux2_ctrl_EX,  mux4_ctrl_EX, mux6_ctrl_EX;
 wire [1:0]  mux6_ctrl_EX;
@@ -178,6 +182,7 @@ wire        hazard_stall; //output of the hazard detection unit.
 wire [31:0] branch_target_addr; //branch target address, calculated in EX stage.
 wire [31:0] branch_addr_calc; //intermediate value during address calculation.
 wire        take_branch; //branch decision signal. 1 if the branch is taken, 0 otherwise.
+wire        priority_EX_branch; // helps to branch decision by determining current pc value
 
 //pipeline registers
 reg [31:0] EXMEM_preg_imm;
@@ -329,6 +334,7 @@ begin
 		{IFID_preg_pc, IFID_preg_instr} <= 64'h13; //nop instruction addi x0,x0,0
 		IFID_preg_dummy <= 1'b0;
 		IFID_preg_priority <= 1'b0;
+        IFID_preg_priority_overwrite <= 1'b0;
 	end
 
 	else if(take_branch | csr_if_flush) //flush IF
@@ -346,24 +352,55 @@ begin
 
 	else
 	begin
-		if(!stall_ID) //stall the pipe if necessary
-		begin
-            if(stall_IF)
+        if(!stall_ID)
+        begin
+            IFID_preg_instr              <= instr_i;    
+        end
+        IFID_preg_pc                 <= pc_o;
+        IFID_preg_dummy              <= 1'b0;
+        pc_o <= pc_i;
+
+        if(!priority_out)
+        begin
+            if(dual_hazard_stall_1)
             begin
-                {IFID_preg_pc, IFID_preg_instr} <= 64'h13;
-                pc_o <= pc_i;
-                IFID_preg_dummy <= 1'b1;           
+                IFID_preg_priority <= ~priority_out;
+                IFID_preg_priority_overwrite <= 1'b1;
+            end
+            else if(dual_hazard_stall_0)
+            begin
+                IFID_preg_priority <= priority_out;
+                IFID_preg_priority_overwrite <= 1'b1;
             end
             else
             begin
-                IFID_preg_instr    <= instr_i;
-                IFID_preg_pc       <= pc_o;
-                IFID_preg_dummy    <= 1'b0;
-                pc_o               <= pc_i;   
-                IFID_preg_priority <= priority;   
-                // IFID_preg_priority <= (dual_hazard_stall_0 || dual_hazard_stall_1) ? priority_ID : priority;    
+                IFID_preg_priority <= priority;
+                IFID_preg_priority_overwrite <= 1'b0;
             end
-		end
+        end
+        else if(priority_out)
+        begin
+            if(dual_hazard_stall_0)
+            begin
+                IFID_preg_priority <= ~priority_out;  
+                IFID_preg_priority_overwrite <= 1'b1;
+            end
+            else if(dual_hazard_stall_1)
+            begin
+                IFID_preg_priority <= ~priority_out;  
+                IFID_preg_priority_overwrite <= 1'b1;
+            end
+            else
+            begin
+                IFID_preg_priority <= priority;
+                IFID_preg_priority_overwrite <= 1'b0;
+            end
+        end
+        else
+        begin
+            IFID_preg_priority <= priority;
+            IFID_preg_priority_overwrite <= 1'b0;
+        end
 	end
 end
 //END IF STAGE-----------------------------------------------------------------------------
@@ -502,19 +539,20 @@ begin
 
         else
         begin
-            IDEX_preg_imm <= imm_dec_o;
-            IDEX_preg_rd  <= rd_ID;
-            IDEX_preg_rs2 <= rs2_ID;
-            IDEX_preg_rs1 <= rs1_ID;
-            IDEX_preg_pc  <= pc_ID;
-            IDEX_preg_ex  <= mux3_o_ID;
-            IDEX_preg_mem <= mux2_o_ID;
-            IDEX_preg_wb  <= mux1_o_ID;
-            IDEX_preg_csr_addr <= csr_addr_ID;
-            IDEX_preg_mret <= mret_ID;
-            IDEX_preg_misaligned <= 1'b0;
-            IDEX_preg_dummy <= IFID_preg_dummy;
-            IDEX_preg_priority <= priority_out;
+            IDEX_preg_imm                <= imm_dec_o;
+            IDEX_preg_rd                 <= rd_ID;
+            IDEX_preg_rs2                <= rs2_ID;
+            IDEX_preg_rs1                <= rs1_ID;
+            IDEX_preg_pc                 <= pc_ID;
+            IDEX_preg_ex                 <= mux3_o_ID;
+            IDEX_preg_mem                <= mux2_o_ID;
+            IDEX_preg_wb                 <= mux1_o_ID;
+            IDEX_preg_csr_addr           <= csr_addr_ID;
+            IDEX_preg_mret               <= mret_ID;
+            IDEX_preg_misaligned         <= 1'b0;
+            IDEX_preg_dummy              <= IFID_preg_dummy;
+            IDEX_preg_priority           <= priority_out;
+            IDEX_preg_priority_overwrite <= IFID_preg_priority_overwrite;
         end
     end
 end
@@ -557,6 +595,7 @@ assign rd_EX    = IDEX_preg_rd;
 assign imm_EX   = IDEX_preg_imm;
 assign csr_addr_EX = IDEX_preg_csr_addr;
 assign priority_EX = IDEX_preg_priority;
+assign priority_overwrite_EX = IDEX_preg_priority_overwrite;
 //assign nets
 assign alu_func     = ex_EX[3:0];
 assign csr_alu_func = ex_EX[5:4];
@@ -622,7 +661,8 @@ ALU ALU (.src1(mux1_o_EX),
 
 //branch logic and address calculation
 assign take_branch = J | (B & aluout_EX[0]);
-assign branch_addr_calc = priority_EX ? mux5_o_EX + imm_EX + 32'd4 : mux5_o_EX + imm_EX;
+assign priority_EX_branch = priority_overwrite_EX ? ~priority_EX : priority_EX;
+assign branch_addr_calc = priority_EX_branch ? mux5_o_EX + imm_EX + 32'd4 : mux5_o_EX + imm_EX;
 assign branch_target_addr[31:1] = branch_addr_calc[31:1];
 assign branch_target_addr[0] = (!mux5_ctrl_EX & J) ? 1'b0 : branch_addr_calc[0]; //clear the least-significant bit if the instruction is JALR.
 assign instr_addr_misaligned = take_branch & (branch_target_addr[1:0] != 2'd0);
