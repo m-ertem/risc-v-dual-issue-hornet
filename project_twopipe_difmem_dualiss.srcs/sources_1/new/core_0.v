@@ -69,7 +69,11 @@ module core_0(input reset_i, //active-low reset
             input [31:0] aluout_MEM_1,
             input [2:0]  mux2_ctrl_EX,
             input [2:0]  mux4_ctrl_EX,
-            input [31:0] mux_o_WB_1
+            input [31:0] mux_o_WB_1,
+
+            output [31:0] pc_EX,
+            output [31:0] pc_MEM,
+            output [31:0] pc_WB
             ); //interrupt acknowledge signal. driven high for one cycle when an external interrupt is handled.
 
 parameter reset_vector = 32'h0; //pc is set to this address when a reset occurs.
@@ -85,8 +89,10 @@ wire [31:0] mux1_o_IF, mux2_o_IF, mux3_o_IF, mux4_o_IF; //mux outputs
 //pipeline registers
 reg [31:0] IFID_preg_instr;
 reg [31:0] IFID_preg_pc;
+reg [31:0] IFID_preg_pc_0;
 reg        IFID_preg_dummy; //indicates if the instruction in the ID stage is dummy, i.e. a flushed instruction, nop.
 reg IFID_preg_priority;
+reg IFID_preg_priority_ID;
 reg IFID_preg_priority_overwrite;
 //END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS
 
@@ -97,6 +103,7 @@ wire [11:0] csr_addr_ID; //CSR register address
 wire        csr_wen_ID;
 wire        mret_ID; //driven high when the instruction in ID stage is MRET.
 wire        stall_ID;
+wire        priority_ID;
 
 //control unit outputs
 wire ctrl_unit_muldiv_start;
@@ -153,7 +160,8 @@ wire muldiv_stall_EX;
 wire [6:0]  wb_EX;
 wire [2:0]  mem_EX;
 wire [20:0] ex_EX;
-wire [31:0] pc_EX, data1_EX, data2_EX, imm_EX;
+// wire [31:0] pc_EX, data1_EX, data2_EX, imm_EX;
+wire [31:0] data1_EX, data2_EX, imm_EX;
 // wire [4:0]  rs1_EX, rs2_EX, rd_EX;
 wire [4:0]  rd_EX;
 wire [11:0] csr_addr_EX;
@@ -215,7 +223,7 @@ wire [31:0] aluout_MEM, data2_MEM;
 //wire [4:0]  rd_MEM;
 wire [31:0] imm_MEM;
 wire [31:0] memout_MEM;
-wire [31:0] pc_MEM;
+// wire [31:0] pc_MEM;
 wire [11:0] csr_addr_MEM;
 wire        csr_wen_MEM;
 wire [1:0]  addr_bits_MEM; //two least-significant bits of data address, from previous stage.
@@ -232,6 +240,7 @@ reg [6:0]  MEMWB_preg_wb;
 reg        MEMWB_preg_mret;
 reg        MEMWB_preg_misaligned;
 reg        MEMWB_preg_priority;
+reg [31:0] MEMWB_preg_pc;
 //END MEM SIGNALS--------END MEM SIGNALS--------END MEM SIGNALS--------END MEM SIGNALS--------END MEM SIGNALS--------END MEM SIGNALS
 
 //WB SIGNALS--------WB SIGNALS--------WB SIGNALS--------WB SIGNALS--------WB SIGNALS--------WB SIGNALS--------WB SIGNALS
@@ -334,6 +343,7 @@ begin
 		{IFID_preg_pc, IFID_preg_instr} <= 64'h13; //nop instruction addi x0,x0,0
 		IFID_preg_dummy <= 1'b0;
 		IFID_preg_priority <= 1'b0;
+        IFID_preg_priority_ID <= 1'b0;
         IFID_preg_priority_overwrite <= 1'b0;
 	end
 
@@ -354,11 +364,13 @@ begin
 	begin
         if(!stall_ID)
         begin
-            IFID_preg_instr              <= instr_i;    
+            IFID_preg_instr <= instr_i;
+            IFID_preg_pc                 <= priority ? pc_o + 4 : pc_o;
+            IFID_preg_dummy              <= 1'b0;
         end
-        IFID_preg_pc                 <= pc_o;
-        IFID_preg_dummy              <= 1'b0;
         pc_o <= pc_i;
+        
+        IFID_preg_priority_ID <= priority;
 
         if(!priority_out)
         begin
@@ -418,6 +430,7 @@ assign csr_addr_ID  = IFID_preg_instr[31:20];
 assign opcode_0     = IFID_preg_instr[6:2];
 assign funct3_0     = IFID_preg_instr[14];
 assign priority_out = IFID_preg_priority;        
+assign priority_ID  = IFID_preg_priority_ID;
 
 //assign nets
 assign stall_ID     = hazard_stall | muldiv_stall_EX | misaligned_access | data_stall_i | csr_stall | dual_hazard_stall_0; //TODO: move csr stall below
@@ -662,7 +675,8 @@ ALU ALU (.src1(mux1_o_EX),
 //branch logic and address calculation
 assign take_branch = J | (B & aluout_EX[0]);
 assign priority_EX_branch = priority_overwrite_EX ? ~priority_EX : priority_EX;
-assign branch_addr_calc = priority_EX_branch ? mux5_o_EX + imm_EX + 32'd4 : mux5_o_EX + imm_EX;
+// assign branch_addr_calc = priority_EX_branch ? mux5_o_EX + imm_EX + 32'd4 : mux5_o_EX + imm_EX;
+assign branch_addr_calc = mux5_o_EX + imm_EX;
 assign branch_target_addr[31:1] = branch_addr_calc[31:1];
 assign branch_target_addr[0] = (!mux5_ctrl_EX & J) ? 1'b0 : branch_addr_calc[0]; //clear the least-significant bit if the instruction is JALR.
 assign instr_addr_misaligned = take_branch & (branch_target_addr[1:0] != 2'd0);
@@ -768,6 +782,7 @@ begin
 		MEMWB_preg_mret       <= 1'b0;
 		MEMWB_preg_misaligned <= 1'b0;
         MEMWB_preg_priority   <= 1'b0;
+        MEMWB_preg_pc         <= 32'b0;
 	end
 
 	else if(csr_mem_flush)
@@ -780,6 +795,7 @@ begin
 		MEMWB_preg_imm        <= 32'b0;
 		MEMWB_preg_mret       <= 1'b0;
 		MEMWB_preg_misaligned <= 1'b0;
+        MEMWB_preg_pc         <= 32'b0;
 	end
 
 	else
@@ -793,6 +809,7 @@ begin
 		MEMWB_preg_mret       <= EXMEM_preg_mret;
 		MEMWB_preg_misaligned <= EXMEM_preg_misaligned;
         MEMWB_preg_priority   <= EXMEM_preg_priority;
+        MEMWB_preg_pc         <= pc_MEM;
 	end
 end
 //END MEM STAGE-----------------------------------------------------------------------------
@@ -807,6 +824,7 @@ assign imm_WB      = MEMWB_preg_imm;
 assign aluout_WB   = MEMWB_preg_aluout;
 assign mret_WB     = MEMWB_preg_mret;
 assign priority_WB = MEMWB_preg_priority;
+assign pc_WB       = MEMWB_preg_pc;
 //assign nets
 assign mem_length_WB = wb_WB[1:0];
 assign csr_wen_WB  = wb_WB[2];

@@ -61,6 +61,11 @@ module core_1(input reset_i, //active-low reset
     input [2:0]  mux4_ctrl_EX,    
     input [31:0] mux_o_WB_0,
 
+    output [31:0] pc_EX,
+    output [31:0] pc_MEM,
+    output [31:0] pc_WB,
+    input priority,
+
     // take_branch signal from core_0    
     input        take_branch
     ); //interrupt acknowledge signal. driven high for one cycle when an external interrupt is handled.
@@ -196,7 +201,7 @@ wire [31:0] aluout_MEM, data2_MEM;
 // wire [4:0]  rd_MEM;
 wire [31:0] imm_MEM;
 wire [31:0] memout_MEM;
-wire [31:0] pc_MEM;
+// wire [31:0] pc_MEM;
 wire [11:0] csr_addr_MEM;
 wire        csr_wen_MEM;
 wire [1:0]  addr_bits_MEM; //two least-significant bits of data address, from previous stage.
@@ -210,6 +215,7 @@ reg [11:0] MEMWB_preg_csr_addr;
 reg [6:0]  MEMWB_preg_wb;
 reg        MEMWB_preg_mret;
 reg        MEMWB_preg_misaligned;
+reg [31:0] MEMWB_preg_pc;
 //END MEM SIGNALS--------END MEM SIGNALS--------END MEM SIGNALS--------END MEM SIGNALS--------END MEM SIGNALS--------END MEM SIGNALS
 
 //WB SIGNALS--------WB SIGNALS--------WB SIGNALS--------WB SIGNALS--------WB SIGNALS--------WB SIGNALS--------WB SIGNALS
@@ -330,22 +336,13 @@ begin
 
 	else
 	begin
-		if(!stall_ID) //stall the pipe if necessary
-		begin
-            if(stall_IF)
-            begin
-                {IFID_preg_pc, IFID_preg_instr} <= 64'h13;
-                pc_o <= pc_i;
-                IFID_preg_dummy <= 1'b1;                
-            end
-            else
-            begin
-                IFID_preg_instr <= instr_i;
-                IFID_preg_pc <= pc_o;
-                IFID_preg_dummy <= 1'b0;
-                pc_o <= pc_i;               
-            end
-		end
+        if(!stall_ID)
+        begin
+            IFID_preg_instr <= instr_i;
+            IFID_preg_pc    <= priority ? pc_o : (pc_o + 32'd4);
+            IFID_preg_dummy <= 1'b0;
+        end
+        pc_o <= pc_i;
 	end
 end
 //END IF STAGE-----------------------------------------------------------------------------
@@ -706,6 +703,7 @@ begin
 		MEMWB_preg_imm <= 32'b0;
 		MEMWB_preg_mret <= 1'b0;
 		MEMWB_preg_misaligned <= 1'b0;
+        MEMWB_preg_pc <= 32'b0;
 	end
 
 	else if(csr_mem_flush)
@@ -718,6 +716,7 @@ begin
 		MEMWB_preg_imm <= 32'b0;
 		MEMWB_preg_mret <= 1'b0;
 		MEMWB_preg_misaligned <= 1'b0;
+        MEMWB_preg_pc <= 32'b0;
 	end
 
 	else
@@ -730,6 +729,7 @@ begin
 		MEMWB_preg_memout <= memout;
 		MEMWB_preg_mret <= EXMEM_preg_mret;
 		MEMWB_preg_misaligned <= EXMEM_preg_misaligned;
+        MEMWB_preg_pc <= pc_MEM;
 	end
 end
 //END MEM STAGE-----------------------------------------------------------------------------
@@ -743,6 +743,7 @@ assign csr_addr_WB = MEMWB_preg_csr_addr;
 assign imm_WB      = MEMWB_preg_imm;
 assign aluout_WB   = MEMWB_preg_aluout;
 assign mret_WB     = MEMWB_preg_mret;
+assign pc_WB       = MEMWB_preg_pc;
 //assign nets
 assign mem_length_WB = wb_WB[1:0];
 assign csr_wen_WB  = wb_WB[2];
