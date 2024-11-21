@@ -48,11 +48,13 @@ begin
 
 	else if(!memwb_wb) //forward from WB stage
 	begin
+		// forward rs1
 		if(rs1 == memwb_rd && rs1 != 5'b0)
 			mux1_ctrl = 2'b1;
 		else
 			mux1_ctrl = 2'b0;
 
+		// forward rs2
 		if(rs2 == memwb_rd && rs2 != 5'b0)
 			mux2_ctrl = 2'b1;
 		else
