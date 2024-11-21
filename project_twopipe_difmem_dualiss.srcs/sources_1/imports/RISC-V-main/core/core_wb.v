@@ -111,6 +111,12 @@ wire [6:0] wb_MEM_1;
 // wire       rf_wen_WB_1; // already declared
 wire [2:0] mux2_ctrl_EX_1,  mux4_ctrl_EX_1;
 
+wire [31:0] pc_MEM_0;
+wire [31:0] pc_MEM_1;
+wire [31:0] pc_WB_0;
+wire [31:0] pc_WB_1;
+wire [31:0] pc_EX_0;
+wire [31:0] pc_EX_1;
 //
 wire [31:0] pc_i_1;
 //---------------------------------------//
@@ -191,7 +197,11 @@ core_0    #(.reset_vector(reset_vector))
     .aluout_MEM_1(aluout_MEM_1),
     .mux2_ctrl_EX(mux2_ctrl_EX_0),
     .mux4_ctrl_EX(mux4_ctrl_EX_0),
-    .mux_o_WB_1(mux_o_WB_1)
+    .mux_o_WB_1(mux_o_WB_1),
+
+    .pc_MEM(pc_MEM_0),
+    .pc_WB(pc_WB_0),
+    .pc_EX(pc_EX_0)
     );
  
 
@@ -264,11 +274,17 @@ core_1    #(.reset_vector(reset_vector))
     .mux4_ctrl_EX(mux4_ctrl_EX_1),
     .mux_o_WB_0(mux_o_WB_0),
 
+    .pc_MEM(pc_MEM_1),
+    .pc_WB(pc_WB_1),
+    .pc_EX(pc_EX_1),
+    .priority(priority_out_to_core_0),
+
     //
     .pc_i(pc_i_1)
     );
 
-assign pc_i_1 = priority_out_to_core_0 ? pc_i : pc_i + 4;
+// assign pc_i_1 = priority_out_to_core_0 ? pc_i : (pc_i + 32'd4);
+assign pc_i_1 = pc_i;
 
 reg_bank REG_BANK( 
     .clk_i(clk_i),
@@ -416,7 +432,15 @@ dual_forwarding_unit DUAL_FORWARDING_UNIT (
 
     // output signals for core_1
     .mux1_ctrl_1(mux2_ctrl_EX_1), //control signal for mux2 in EX
-    .mux2_ctrl_1(mux4_ctrl_EX_1) //control signal for mux4 in EX
+    .mux2_ctrl_1(mux4_ctrl_EX_1), //control signal for mux4 in EX
+
+    .pc_MEM_0(pc_MEM_0),
+    .pc_MEM_1(pc_MEM_1),
+    .pc_WB_0(pc_WB_0),
+    .pc_WB_1(pc_WB_1),
+    .pc_EX_0(pc_EX_0),
+    .pc_EX_1(pc_EX_1)
+
 );
 
 endmodule
