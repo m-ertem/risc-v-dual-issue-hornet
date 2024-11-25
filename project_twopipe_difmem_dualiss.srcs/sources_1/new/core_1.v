@@ -44,6 +44,8 @@ module core_1(input reset_i, //active-low reset
     output funct3_1,  
     output [4:0] rd_ID,
     output L_ID,
+    output L,
+    output [4:0] rd_EX,
     
     // pc_logic
     // output reg [31:0] pc_o,
@@ -61,6 +63,7 @@ module core_1(input reset_i, //active-low reset
     input [2:0]  mux4_ctrl_EX,    
     input [31:0] mux_o_WB_0,
 
+    output [31:0] pc_ID,
     output [31:0] pc_EX,
     output [31:0] pc_MEM,
     output [31:0] pc_WB,
@@ -118,7 +121,7 @@ wire [20:0] mux3_o_ID; //EX field
 
 wire [29:0] imm_dec_i; //immediate decoder input
 wire [31:0] imm_dec_o; //immediate decoder output
-wire [31:0] pc_ID; //pc value
+// wire [31:0] pc_ID; //pc value
 
 // dual hazard unit signals
 wire [6:0] wb_ID;
@@ -152,7 +155,7 @@ wire [2:0]  mem_EX;
 wire [20:0] ex_EX;
 wire [31:0] pc_EX, data1_EX, data2_EX, imm_EX;
 // wire [4:0]  rs1_EX, rs2_EX, rd_EX;
-wire [4:0]  rd_EX;
+// wire [4:0]  rd_EX;
 wire [11:0] csr_addr_EX;
 wire        csr_wen_EX;
 //mux signals
@@ -167,7 +170,8 @@ wire [31:0] aluout_EX;
 wire [31:0] csr_alu_out;
 
 wire        stall_EX;
-wire        J, B, L; //jump, branch, load
+// wire        J, B, L; //jump, branch, load
+wire        J, B; //jump, branch
 wire        misaligned_access; //driven high when the first part of a misaligned access is being executed.
 wire        mem_wen_EX;
 wire [1:0]  mem_length_EX;
@@ -492,8 +496,6 @@ begin
             IDEX_preg_mret <= mret_ID;
             IDEX_preg_misaligned <= 1'b0;
             IDEX_preg_dummy <= IFID_preg_dummy;
-
-            
         end
     end
 end

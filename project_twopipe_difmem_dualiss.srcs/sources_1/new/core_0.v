@@ -47,6 +47,7 @@ module core_0(input reset_i, //active-low reset
             input dual_hazard_stall_1,
             // input priority_ID,
             output priority_out, //goes to dual hazard
+            output [4:0] rd_EX,
             
             output [4:0] opcode_0, 
             output funct3_0, 
@@ -71,6 +72,7 @@ module core_0(input reset_i, //active-low reset
             input [2:0]  mux4_ctrl_EX,
             input [31:0] mux_o_WB_1,
 
+            output [31:0] pc_ID,
             output [31:0] pc_EX,
             output [31:0] pc_MEM,
             output [31:0] pc_WB
@@ -129,7 +131,7 @@ wire [20:0] mux3_o_ID; //EX field
 
 wire [29:0] imm_dec_i; //immediate decoder input
 wire [31:0] imm_dec_o; //immediate decoder output
-wire [31:0] pc_ID; //pc value
+// wire [31:0] pc_ID; //pc value
 
 //pipeline registers
 reg [31:0] IDEX_preg_imm;
@@ -163,7 +165,7 @@ wire [20:0] ex_EX;
 // wire [31:0] pc_EX, data1_EX, data2_EX, imm_EX;
 wire [31:0] data1_EX, data2_EX, imm_EX;
 // wire [4:0]  rs1_EX, rs2_EX, rd_EX;
-wire [4:0]  rd_EX;
+// wire [4:0]  rd_EX;
 wire [11:0] csr_addr_EX;
 wire        csr_wen_EX;
 wire        priority_EX;
