@@ -92,7 +92,8 @@ wire dual_hazard_stall_0, dual_hazard_stall_1, stall_IF_0, stall_IF_1, take_bran
 wire priority_out_to_core_0, priority_overwrite;
 wire priority_out_to_dual_hazard_unit;
 wire funct3_0, funct3_1;
-wire [4:0] opcode_0, opcode_1, rd_ID_1, rd_ID_0, rs1_ID_0, rs1_ID_1, rs2_ID_0, rs2_ID_1;
+wire L_ID, L;
+wire [4:0] opcode_0, opcode_1, rd_ID_1, rd_ID_0, rs1_ID_0, rs1_ID_1, rs2_ID_0, rs2_ID_1, rd_EX_0, rd_EX_1;
 wire [4:0] rd_WB_0, rd_WB_1;
 
 // dual forwarding unit signals
@@ -111,12 +112,14 @@ wire [6:0] wb_MEM_1;
 // wire       rf_wen_WB_1; // already declared
 wire [2:0] mux2_ctrl_EX_1,  mux4_ctrl_EX_1;
 
+wire [31:0] pc_ID_0;
+wire [31:0] pc_ID_1;
+wire [31:0] pc_EX_0;
+wire [31:0] pc_EX_1;
 wire [31:0] pc_MEM_0;
 wire [31:0] pc_MEM_1;
 wire [31:0] pc_WB_0;
 wire [31:0] pc_WB_1;
-wire [31:0] pc_EX_0;
-wire [31:0] pc_EX_1;
 //
 wire [31:0] pc_i_1;
 //---------------------------------------//
@@ -178,7 +181,8 @@ core_0    #(.reset_vector(reset_vector))
     .opcode_0(opcode_0),
     .dual_hazard_stall_0(dual_hazard_stall_0),
     .dual_hazard_stall_1(dual_hazard_stall_1),
-    
+    .rd_EX(rd_EX_0),
+
     // pc_logic
     .branch_target_addr(branch_target_addr),
     .pc_i(pc_i),
@@ -199,9 +203,10 @@ core_0    #(.reset_vector(reset_vector))
     .mux4_ctrl_EX(mux4_ctrl_EX_0),
     .mux_o_WB_1(mux_o_WB_1),
 
+    .pc_ID(pc_ID_0),
+    .pc_EX(pc_EX_0),
     .pc_MEM(pc_MEM_0),
-    .pc_WB(pc_WB_0),
-    .pc_EX(pc_EX_0)
+    .pc_WB(pc_WB_0)
     );
  
 
@@ -259,7 +264,9 @@ core_1    #(.reset_vector(reset_vector))
     .funct3_1(funct3_1),
     .opcode_1(opcode_1),
     .L_ID(L_ID),
+    .L(L),
     .dual_hazard_stall_1(dual_hazard_stall_1),
+    .rd_EX(rd_EX_1),
 
     // dual forwarding unit
     .rs1_EX(rs1_EX_1),
@@ -274,9 +281,11 @@ core_1    #(.reset_vector(reset_vector))
     .mux4_ctrl_EX(mux4_ctrl_EX_1),
     .mux_o_WB_0(mux_o_WB_0),
 
+    .pc_ID(pc_ID_1),
+    .pc_EX(pc_EX_1),
     .pc_MEM(pc_MEM_1),
     .pc_WB(pc_WB_1),
-    .pc_EX(pc_EX_1),
+
     .priority(priority_out_to_core_0),
 
     //
@@ -381,14 +390,23 @@ dual_hazard_unit DUAL_HAZARD_UNIT(
     .rs1_ID_0(rs1_ID_0),
     .rs2_ID_0(rs2_ID_0),
     .rd_ID_0(rd_ID_0),
+    .rd_EX_0(rd_EX_0),
     .opcode_0(opcode_0),
     .funct3_0(funct3_0),
     .rs1_ID_1(rs1_ID_1),
     .rs2_ID_1(rs2_ID_1),
     .rd_ID_1(rd_ID_1),
+    .rd_EX_1(rd_EX_1),
     .opcode_1(opcode_1),
     .funct3_1(funct3_1),
     .L_ID_1(L_ID),
+    .L_EX_1(L),
+
+    .pc_ID_0(pc_ID_0),
+    .pc_ID_1(pc_ID_1),
+    .pc_EX_0(pc_EX_0),
+    .pc_EX_1(pc_EX_1),
+
     .dual_hazard_stall_0(dual_hazard_stall_0),
     .dual_hazard_stall_1(dual_hazard_stall_1)
 );
