@@ -5,14 +5,23 @@ module dual_hazard_unit (
     input[4:0] rs1_ID_0,
     input[4:0] rs2_ID_0,
     input[4:0] rd_ID_0,
+    input[4:0] rd_EX_0,
     input[4:0] opcode_0,
     input funct3_0,
     input[4:0] rs1_ID_1,
     input[4:0] rs2_ID_1,
     input[4:0] rd_ID_1,
+    input[4:0] rd_EX_1,
     input[4:0] opcode_1,
     input funct3_1,
     input L_ID_1,
+    input L_EX_1,
+
+    input[31:0] pc_ID_0,
+    input[31:0] pc_ID_1,
+    input[31:0] pc_EX_0,
+    input[31:0] pc_EX_1,
+    
     output dual_hazard_stall_0,
     output dual_hazard_stall_1
 );
@@ -21,6 +30,7 @@ module dual_hazard_unit (
 // e�e priority 0 ise rs1_ID_1, rs2_ID_1, rd_ID_0 kar��la�t�r�lacak
 
 wire uses_rs1_0, uses_rs2_0;
+wire valid_EX_0, valid_EX_1;
 reg stall_flag_0, stall_trigger_0, stall_once_0;
 reg stall_flag_1, stall_trigger_1, stall_once_1;
 
@@ -42,6 +52,9 @@ assign uses_rs1_1 = opcode_1[4:0] == 5'b00000 || //load instructions
 
 assign uses_rs2_1 = opcode_1[4:0] == 5'b01000 || //store instructions
                     opcode_1[4:0] == 5'b01100; //register-register arithmetic
+
+assign valid_EX_1 = (pc_ID_0 > pc_EX_1) ? 1'b1 : 1'b0; 
+assign valid_EX_0 = (pc_ID_1 > pc_EX_0) ? 1'b1 : 1'b0; 
 
 always @(*)
 begin
@@ -94,6 +107,17 @@ begin
             stall_once_0    = 1'b0;
             stall_trigger_1 = 1'b0;
             stall_once_1    = 1'b0;
+        end
+
+        // if(valid_EX_0 && L_EX_0 && (((rs1_ID_1 == rd_EX_0) && uses_rs1_1 && (rs1_ID_1 != 5'b0)) || ((rs2_ID_1 == rd_EX_0) && uses_rs2_1 && (rs2_ID_1 != 5'b0))) )
+        // begin
+        //     stall_once_1 = 1'b1;
+        // end
+        // else 
+        
+        if(valid_EX_1 && L_EX_1 && (((rs1_ID_0 == rd_EX_1) && uses_rs1_0 && (rs1_ID_0 != 5'b0)) || ((rs2_ID_0 == rd_EX_1) && uses_rs2_0 && (rs2_ID_0 != 5'b0))))
+        begin
+            stall_once_0 = 1'b1;
         end
     end
 end
