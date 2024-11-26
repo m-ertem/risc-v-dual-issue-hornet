@@ -375,8 +375,6 @@ issue_unit ISSUE_UNIT(
     .stall_IF_1(stall_IF_1),
     .dual_hazard_stall_0(dual_hazard_stall_0),
     .dual_hazard_stall_1(dual_hazard_stall_1),
-    .opcode_0_ID(opcode_0),
-    .priority_ID(priority_out_to_dual_hazard_unit),
     .issue_stall_0(issue_stall_0),
     .issue_stall_1(issue_stall_1),
     .instr_i(instr_i),
