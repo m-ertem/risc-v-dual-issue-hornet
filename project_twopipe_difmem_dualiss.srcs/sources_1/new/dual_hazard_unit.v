@@ -108,17 +108,12 @@ begin
             stall_trigger_1 = 1'b0;
             stall_once_1    = 1'b0;
         end
-
-        // if(valid_EX_0 && L_EX_0 && (((rs1_ID_1 == rd_EX_0) && uses_rs1_1 && (rs1_ID_1 != 5'b0)) || ((rs2_ID_1 == rd_EX_0) && uses_rs2_1 && (rs2_ID_1 != 5'b0))) )
-        // begin
-        //     stall_once_1 = 1'b1;
-        // end
-        // else 
         
         if(valid_EX_1 && L_EX_1 && (((rs1_ID_0 == rd_EX_1) && uses_rs1_0 && (rs1_ID_0 != 5'b0)) || ((rs2_ID_0 == rd_EX_1) && uses_rs2_0 && (rs2_ID_0 != 5'b0))))
         begin
             stall_once_0 = 1'b1;
         end
+
     end
 end
 
