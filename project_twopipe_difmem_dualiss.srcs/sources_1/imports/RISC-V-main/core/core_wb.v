@@ -404,7 +404,6 @@ dual_hazard_unit DUAL_HAZARD_UNIT(
     .funct3_1(funct3_1),
     .L_ID_1(L_ID),
     .L_EX_1(L),
-    .stall_IF_1(stall_IF_1),
 
     .pc_ID_0(pc_ID_0),
     .pc_ID_1(pc_ID_1),
