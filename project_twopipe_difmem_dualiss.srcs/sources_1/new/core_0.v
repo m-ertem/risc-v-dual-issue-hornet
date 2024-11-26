@@ -57,6 +57,7 @@ module core_0(input reset_i, //active-low reset
             output [31:0] branch_target_addr, // goes to pc_logic
             output reg [31:0] pc_o,
             input [31:0] pc_i,
+            input stall_IF_1,
 
             // dual forwarding unit
             output [4:0] rs1_EX, rs2_EX,
@@ -99,7 +100,7 @@ reg IFID_preg_priority_overwrite;
 //END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS
 
 //ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS
-wire [4:0]  rs1_ID, rs2_ID, rd_ID; //register addresses
+// wire [4:0]  rs1_ID, rs2_ID, rd_ID; //register addresses
 wire [31:0] data1_ID, data2_ID;
 wire [11:0] csr_addr_ID; //CSR register address
 wire        csr_wen_ID;
@@ -376,15 +377,20 @@ begin
 
         if(!priority_out)
         begin
-            if(dual_hazard_stall_1)
+            if(!stall_IF && stall_IF_1)
             begin
                 IFID_preg_priority <= ~priority_out;
                 IFID_preg_priority_overwrite <= 1'b1;
             end
-            else if(dual_hazard_stall_0)
+            else if(stall_IF && !stall_IF_1)
             begin
                 IFID_preg_priority <= priority_out;
                 IFID_preg_priority_overwrite <= 1'b1;
+            end
+            else if(stall_IF && stall_IF_1)
+            begin
+                IFID_preg_priority <= priority_out;  
+                IFID_preg_priority_overwrite <= 1'b0;
             end
             else
             begin
@@ -394,15 +400,20 @@ begin
         end
         else if(priority_out)
         begin
-            if(dual_hazard_stall_0)
+            if(stall_IF && !stall_IF_1)
             begin
                 IFID_preg_priority <= ~priority_out;  
                 IFID_preg_priority_overwrite <= 1'b1;
             end
-            else if(dual_hazard_stall_1)
+            else if(!stall_IF && stall_IF_1)
             begin
                 IFID_preg_priority <= ~priority_out;  
                 IFID_preg_priority_overwrite <= 1'b1;
+            end
+            else if(stall_IF && stall_IF_1)
+            begin
+                IFID_preg_priority <= priority_out;  
+                IFID_preg_priority_overwrite <= 1'b0;
             end
             else
             begin
@@ -536,7 +547,6 @@ begin
 
     else if(stall_EX || misaligned_access)
     begin
-        
         if(misaligned_access)
             IDEX_preg_misaligned <= 1'b1;
     end
@@ -550,6 +560,7 @@ begin
             IDEX_preg_misaligned <= 1'b0;
             IDEX_preg_dummy <= 1'b1;
             IDEX_preg_rd <= 5'b0;
+            IDEX_preg_ex <= 21'b0; // added afterwards
         end
 
         else
