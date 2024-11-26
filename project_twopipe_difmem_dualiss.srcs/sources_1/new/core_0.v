@@ -39,7 +39,6 @@ module core_0(input reset_i, //active-low reset
             
             input  priority, // comes from issue unit
             input  issue_stall_0,  /*comes from issue unit */
-            // input  priority_overwrite,
             output stall_IF,// goes to issue unit
             
             // dual_hazard_unit signals
@@ -96,7 +95,6 @@ reg [31:0] IFID_preg_pc_0;
 reg        IFID_preg_dummy; //indicates if the instruction in the ID stage is dummy, i.e. a flushed instruction, nop.
 reg IFID_preg_priority;
 reg IFID_preg_priority_ID;
-reg IFID_preg_priority_overwrite;
 //END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS
 
 //ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS
@@ -146,7 +144,6 @@ reg        IDEX_preg_dummy; //indicates if the instruction in the EX stage is du
 reg        IDEX_preg_mret; //driven high when the instruction in EX stage is MRET.
 reg        IDEX_preg_misaligned; //driven high when the second part of a misaligned access is being executed in EX stage.
 reg        IDEX_preg_priority;
-reg        IDEX_preg_priority_overwrite;
 
 //reg [31:0] register_bank [31:0]; //32x32 register file
 //END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS
@@ -170,7 +167,6 @@ wire [31:0] data1_EX, data2_EX, imm_EX;
 wire [11:0] csr_addr_EX;
 wire        csr_wen_EX;
 wire        priority_EX;
-wire        priority_overwrite_EX;
 //mux signals
 // wire [1:0]  mux2_ctrl_EX,  mux4_ctrl_EX, mux6_ctrl_EX;
 wire [1:0]  mux6_ctrl_EX;
@@ -347,7 +343,6 @@ begin
 		IFID_preg_dummy <= 1'b0;
 		IFID_preg_priority <= 1'b0;
         IFID_preg_priority_ID <= 1'b0;
-        IFID_preg_priority_overwrite <= 1'b0;
 	end
 
 	else if(take_branch | csr_if_flush) //flush IF
@@ -380,51 +375,42 @@ begin
             if(!stall_IF && stall_IF_1)
             begin
                 IFID_preg_priority <= ~priority_out;
-                IFID_preg_priority_overwrite <= 1'b1;
             end
             else if(stall_IF && !stall_IF_1)
             begin
                 IFID_preg_priority <= priority_out;
-                IFID_preg_priority_overwrite <= 1'b1;
             end
             else if(stall_IF && stall_IF_1)
             begin
-                IFID_preg_priority <= priority_out;  
-                IFID_preg_priority_overwrite <= 1'b0;
+                IFID_preg_priority <= priority_out;
             end
             else
             begin
                 IFID_preg_priority <= priority;
-                IFID_preg_priority_overwrite <= 1'b0;
             end
         end
         else if(priority_out)
         begin
             if(stall_IF && !stall_IF_1)
             begin
-                IFID_preg_priority <= ~priority_out;  
-                IFID_preg_priority_overwrite <= 1'b1;
+                IFID_preg_priority <= ~priority_out;
             end
             else if(!stall_IF && stall_IF_1)
             begin
-                IFID_preg_priority <= ~priority_out;  
-                IFID_preg_priority_overwrite <= 1'b1;
+                IFID_preg_priority <= ~priority_out;
             end
             else if(stall_IF && stall_IF_1)
             begin
-                IFID_preg_priority <= priority_out;  
-                IFID_preg_priority_overwrite <= 1'b0;
+                IFID_preg_priority <= priority_out;
             end
             else
             begin
                 IFID_preg_priority <= priority;
-                IFID_preg_priority_overwrite <= 1'b0;
             end
         end
         else
         begin
             IFID_preg_priority <= priority;
-            IFID_preg_priority_overwrite <= 1'b0;
         end
 	end
 end
@@ -578,7 +564,6 @@ begin
             IDEX_preg_misaligned         <= 1'b0;
             IDEX_preg_dummy              <= IFID_preg_dummy;
             IDEX_preg_priority           <= priority_out;
-            IDEX_preg_priority_overwrite <= IFID_preg_priority_overwrite;
         end
     end
 end
@@ -621,7 +606,6 @@ assign rd_EX    = IDEX_preg_rd;
 assign imm_EX   = IDEX_preg_imm;
 assign csr_addr_EX = IDEX_preg_csr_addr;
 assign priority_EX = IDEX_preg_priority;
-assign priority_overwrite_EX = IDEX_preg_priority_overwrite;
 //assign nets
 assign alu_func     = ex_EX[3:0];
 assign csr_alu_func = ex_EX[5:4];
@@ -687,8 +671,6 @@ ALU ALU (.src1(mux1_o_EX),
 
 //branch logic and address calculation
 assign take_branch = J | (B & aluout_EX[0]);
-assign priority_EX_branch = priority_overwrite_EX ? ~priority_EX : priority_EX;
-// assign branch_addr_calc = priority_EX_branch ? mux5_o_EX + imm_EX + 32'd4 : mux5_o_EX + imm_EX;
 assign branch_addr_calc = mux5_o_EX + imm_EX;
 assign branch_target_addr[31:1] = branch_addr_calc[31:1];
 assign branch_target_addr[0] = (!mux5_ctrl_EX & J) ? 1'b0 : branch_addr_calc[0]; //clear the least-significant bit if the instruction is JALR.
