@@ -54,21 +54,6 @@ module issue_unit(
             instr_1_type = branch;
     end
 
-    // // assign priority_overwrite bit according to dual_hazard_stall_signal
-    // always@(*)
-    // begin
-    //     if(priority_tmp==1'b0 && dual_hazard_stall_1)
-    //     begin
-    //         priority_overwrite = 1'b1;
-    //     end
-    //     else if(priority_tmp==1'b1 && dual_hazard_stall_0)
-    //     begin
-    //         priority_overwrite = 1'b1;  
-    //     end
-    //     else
-    //         priority_overwrite = 1'b0;
-    // end
-
     // assign instructions to pipelines
     always@(*) begin
         if(instr_0_type == mem && instr_1_type == mem && !stall_IF_0 && !stall_IF_1)
@@ -112,8 +97,8 @@ module issue_unit(
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
             priority_tmp  = 1'b1;
-            pc_increment  = 8;               
-            issue_stall_0 = 0;
+            pc_increment  = 4;               
+            issue_stall_0 = 1;
             issue_stall_1 = 0;            
         end
         else if(instr_0_type == mem && instr_1_type == branch && stall_IF_0 && !stall_IF_1)
@@ -259,8 +244,8 @@ module issue_unit(
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
             priority_tmp  = 1'b1;
-            pc_increment  = 8;
-            issue_stall_0 = 0;
+            pc_increment  = 4;
+            issue_stall_0 = 1; // NOP
             issue_stall_1 = 0;  
         end
         else if(instr_0_type == ALU && instr_1_type == branch && stall_IF_0 && !stall_IF_1)
@@ -411,7 +396,6 @@ module issue_unit(
         end   
     end
 
-    // assign priority = priority_overwrite ? ~priority_tmp : priority_tmp;
     assign priority = priority_tmp;
 
     assign instr_i = instr_i_reg;
