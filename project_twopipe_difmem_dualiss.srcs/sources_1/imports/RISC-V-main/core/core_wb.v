@@ -187,6 +187,7 @@ core_0    #(.reset_vector(reset_vector))
     .branch_target_addr(branch_target_addr),
     .pc_i(pc_i),
     .pc_o(pc_o),
+    .stall_IF_1(stall_IF_1),
 
     // dual forwarding unit
     .rs1_EX(rs1_EX_0),
@@ -325,7 +326,7 @@ reg_bank REG_BANK(
     .stall_ID_1(stall_ID_1),
                  
     .rs1_ID_0(rs1_ID_0),
-    .rs2_ID_0(rs2_ID_1),
+    .rs2_ID_0(rs2_ID_0),
     
     .rs1_ID_1(rs1_ID_1),
     .rs2_ID_1(rs2_ID_1),
@@ -374,6 +375,8 @@ issue_unit ISSUE_UNIT(
     .stall_IF_1(stall_IF_1),
     .dual_hazard_stall_0(dual_hazard_stall_0),
     .dual_hazard_stall_1(dual_hazard_stall_1),
+    .opcode_0_ID(opcode_0),
+    .priority_ID(priority_out_to_dual_hazard_unit),
     .issue_stall_0(issue_stall_0),
     .issue_stall_1(issue_stall_1),
     .instr_i(instr_i),
@@ -401,6 +404,7 @@ dual_hazard_unit DUAL_HAZARD_UNIT(
     .funct3_1(funct3_1),
     .L_ID_1(L_ID),
     .L_EX_1(L),
+    .stall_IF_1(stall_IF_1),
 
     .pc_ID_0(pc_ID_0),
     .pc_ID_1(pc_ID_1),
