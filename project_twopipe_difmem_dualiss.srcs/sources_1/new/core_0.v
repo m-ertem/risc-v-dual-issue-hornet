@@ -23,15 +23,15 @@ module core_0(input reset_i, //active-low reset
             
             ////////register outputs/////////
             output rf_wen_WB,
-            output [31:0] mux_o_WB,
+            output reg [31:0] mux_o_WB,
             output take_branch,
             output csr_id_flush,
             output stall_EX,
             output stall_ID,
             output [4:0] rd_WB,
-            output misaligned_access,
-            output [4:0] IDEX_preg_rs1,
-            output [4:0] IDEX_preg_rs2,
+            output misaligned_access, //driven high when the first part of a misaligned access is being executed.
+            output reg [4:0] IDEX_preg_rs1,
+            output reg [4:0] IDEX_preg_rs2,
             output [4:0] rs1_ID,
             output [4:0] rs2_ID,   
             input  [31:0] IDEX_preg_data1,
@@ -53,7 +53,7 @@ module core_0(input reset_i, //active-low reset
             output [4:0] rd_ID,
             
             // pc_logic
-            output [31:0] branch_target_addr, // goes to pc_logic
+            output [31:0] branch_target_addr, // goes to pc_logic //branch target address, calculated in EX stage.
             output reg [31:0] pc_o,
             input [31:0] pc_i,
             input stall_IF_1,
@@ -103,7 +103,6 @@ wire [31:0] data1_ID, data2_ID;
 wire [11:0] csr_addr_ID; //CSR register address
 wire        csr_wen_ID;
 wire        mret_ID; //driven high when the instruction in ID stage is MRET.
-wire        stall_ID;
 wire        priority_ID;
 
 //control unit outputs
@@ -134,7 +133,7 @@ wire [31:0] imm_dec_o; //immediate decoder output
 
 //pipeline registers
 reg [31:0] IDEX_preg_imm;
-reg [4:0]  IDEX_preg_rd, IDEX_preg_rs2, IDEX_preg_rs1;
+reg [4:0]  IDEX_preg_rd;
 reg [31:0] IDEX_preg_pc;
 reg [20:0] IDEX_preg_ex;
 reg [2:0]  IDEX_preg_mem;
@@ -178,17 +177,13 @@ wire [1:0]  csr_alu_func;
 wire [31:0] aluout_EX;
 wire [31:0] csr_alu_out;
 
-wire        stall_EX;
 wire        J, B, L; //jump, branch, load
-wire        misaligned_access; //driven high when the first part of a misaligned access is being executed.
 wire        mem_wen_EX;
 wire [1:0]  mem_length_EX;
 wire        instr_addr_misaligned; //driven high when the calculated instruction address is misaligned, which causes an exception.
 wire        hazard_stall; //output of the hazard detection unit.
 //branch signals
-wire [31:0] branch_target_addr; //branch target address, calculated in EX stage.
 wire [31:0] branch_addr_calc; //intermediate value during address calculation.
-wire        take_branch; //branch decision signal. 1 if the branch is taken, 0 otherwise.
 wire        priority_EX_branch; // helps to branch decision by determining current pc value
 
 //pipeline registers
@@ -218,7 +213,7 @@ assign data_i = 32'b0;
 //signals from previous stage
 // wire [6:0]  wb_MEM;
 wire [2:0]  mem_MEM;
-wire [31:0] aluout_MEM, data2_MEM;
+wire [31:0] data2_MEM;
 //wire [4:0]  rd_MEM;
 wire [31:0] imm_MEM;
 wire [31:0] memout_MEM;
@@ -228,7 +223,6 @@ wire        csr_wen_MEM;
 wire [1:0]  addr_bits_MEM; //two least-significant bits of data address, from previous stage.
 
 wire [31:0] memout; //output of load-store unit
-wire        priority_MEM; // goes to dual forwarding unit
 
 //pipeline registers
 reg [4:0]  MEMWB_preg_rd;
@@ -254,12 +248,10 @@ wire        csr_wen_WB;
 wire [11:0] csr_addr_WB;
 wire [31:0] memout_WB, aluout_WB, imm_WB;
 wire        mret_WB;
-reg [31:0]  mux_o_WB;
-wire        priority_WB; // goes to dual forwarding unit
 //END WB SIGNALS--------END WB SIGNALS--------END WB SIGNALS--------END WB SIGNALS--------END WB SIGNALS--------END WB SIGNALS
 
 //CSR SIGNALS--------CSR SIGNALS--------CSR SIGNALS--------CSR SIGNALS--------CSR SIGNALS--------CSR SIGNALS
-wire csr_if_flush, csr_id_flush, csr_ex_flush, csr_mem_flush;
+wire csr_if_flush, csr_ex_flush, csr_mem_flush;
 wire csr_stall; //stalls IF and ID stages
 wire [31:0] csr_pcin_mux1_o, csr_pcin_mux2_o;
 reg [31:0] csr_pc_input;

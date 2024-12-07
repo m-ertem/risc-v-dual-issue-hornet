@@ -32,8 +32,6 @@ module issue_unit(
     assign opcode_0 = instr_i_tmp[6:2];
     assign opcode_1 = instr_i_1_tmp[6:2];
 
-    assign stall_check = 1'b1;
-
     // assign first instruction's type
     always@(*) begin
         if(opcode_0 == 5'b01100 ||opcode_0 ==  5'b00100 || opcode_0 == 5'b01101 )

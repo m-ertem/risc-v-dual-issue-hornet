@@ -21,15 +21,15 @@ module core_1(input reset_i, //active-low reset
     output irq_ack_o,
     ////////register outputs/////////
     output rf_wen_WB,
-    output [31:0] mux_o_WB,
+    output reg [31:0] mux_o_WB,
     // output take_branch,
     output csr_id_flush,
     output stall_EX,
     output stall_ID,
     output [4:0] rd_WB,
-    output misaligned_access,
-    output [4:0] IDEX_preg_rs1,
-    output [4:0] IDEX_preg_rs2,
+    output misaligned_access, //driven high when the first part of a misaligned access is being executed.
+    output reg [4:0] IDEX_preg_rs1,
+    output reg [4:0] IDEX_preg_rs2,
     output [4:0] rs1_ID,
     output [4:0] rs2_ID,   
     input [31:0] IDEX_preg_data1,
@@ -83,7 +83,6 @@ wire [31:0] mux1_o_IF, mux2_o_IF, mux3_o_IF, mux4_o_IF; //mux outputs
 //wire [31:0] pc_i; //pc input
 reg  [31:0] pc_o; //pc output
 
-wire stall_IF; //stalls the IF stage when it is high.
 //pipeline registers
 reg [31:0] IFID_preg_instr;
 reg [31:0] IFID_preg_pc;
@@ -91,12 +90,10 @@ reg        IFID_preg_dummy; //indicates if the instruction in the ID stage is du
 //END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS--------END IF SIGNALS
 
 //ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS--------ID SIGNALS
-wire [4:0]  rs1_ID, rs2_ID, rd_ID; //register addresses
 wire [31:0] data1_ID, data2_ID;
 wire [11:0] csr_addr_ID; //CSR register address
 wire        csr_wen_ID;
 wire        mret_ID; //driven high when the instruction in ID stage is MRET.
-wire        stall_ID;
 //control unit outputs
 wire ctrl_unit_muldiv_start;
 wire ctrl_unit_muldiv_sel;
@@ -128,7 +125,7 @@ wire [6:0] wb_ID;
 
 //pipeline registers
 reg [31:0] IDEX_preg_imm;
-reg [4:0]  IDEX_preg_rd, IDEX_preg_rs2, IDEX_preg_rs1;
+reg [4:0]  IDEX_preg_rd;
 reg [31:0] IDEX_preg_pc;
 reg [20:0] IDEX_preg_ex;
 reg [2:0]  IDEX_preg_mem;
@@ -153,7 +150,7 @@ wire muldiv_stall_EX;
 wire [6:0]  wb_EX;
 wire [2:0]  mem_EX;
 wire [20:0] ex_EX;
-wire [31:0] pc_EX, data1_EX, data2_EX, imm_EX;
+wire [31:0] data1_EX, data2_EX, imm_EX;
 // wire [4:0]  rs1_EX, rs2_EX, rd_EX;
 // wire [4:0]  rd_EX;
 wire [11:0] csr_addr_EX;
@@ -169,10 +166,8 @@ wire [1:0]  csr_alu_func;
 wire [31:0] aluout_EX;
 wire [31:0] csr_alu_out;
 
-wire        stall_EX;
 // wire        J, B, L; //jump, branch, load
 wire        J, B; //jump, branch
-wire        misaligned_access; //driven high when the first part of a misaligned access is being executed.
 wire        mem_wen_EX;
 wire [1:0]  mem_length_EX;
 wire        instr_addr_misaligned; //driven high when the calculated instruction address is misaligned, which causes an exception.
@@ -201,7 +196,7 @@ reg [1:0]  EXMEM_preg_addr_bits; //two least-significant bits of data address.
 //signals from previous stage
 // wire [6:0]  wb_MEM;
 wire [2:0]  mem_MEM;
-wire [31:0] aluout_MEM, data2_MEM;
+wire [31:0] data2_MEM;
 // wire [4:0]  rd_MEM;
 wire [31:0] imm_MEM;
 wire [31:0] memout_MEM;
@@ -224,7 +219,6 @@ reg [31:0] MEMWB_preg_pc;
 
 //WB SIGNALS--------WB SIGNALS--------WB SIGNALS--------WB SIGNALS--------WB SIGNALS--------WB SIGNALS--------WB SIGNALS
 //signals from previous stage
-wire [4:0]  rd_WB;
 wire [6:0]  wb_WB;
 wire        load_sign;
 wire [1:0]  mem_length_WB;
@@ -234,11 +228,10 @@ wire        csr_wen_WB;
 wire [11:0] csr_addr_WB;
 wire [31:0] memout_WB, aluout_WB, imm_WB;
 wire        mret_WB;
-reg [31:0]  mux_o_WB;
 //END WB SIGNALS--------END WB SIGNALS--------END WB SIGNALS--------END WB SIGNALS--------END WB SIGNALS--------END WB SIGNALS
 
 //CSR SIGNALS--------CSR SIGNALS--------CSR SIGNALS--------CSR SIGNALS--------CSR SIGNALS--------CSR SIGNALS
-wire csr_if_flush, csr_id_flush, csr_ex_flush, csr_mem_flush;
+wire csr_if_flush, csr_ex_flush, csr_mem_flush;
 wire csr_stall; //stalls IF and ID stages
 wire [31:0] csr_pcin_mux1_o, csr_pcin_mux2_o;
 reg [31:0] csr_pc_input;
@@ -264,7 +257,7 @@ begin
 	else
 		csr_pc_input <= csr_pcin_mux2_o;
 end
-//instantiate CSR Unit
+// //instantiate CSR Unit
 csr_unit CSR_UNIT(.clk_i(clk_i),
                   .reset_i(reset_i),
                   .pc_i(csr_pc_input),

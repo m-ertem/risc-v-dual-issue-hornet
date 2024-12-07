@@ -62,10 +62,12 @@ begin
 	end
 
 	else
+	begin
         if(!rf_wen_WB_0)
 		    register_bank[rd_WB_0] <= mux_o_WB_0;
         if(!rf_wen_WB_1)
 		    register_bank[rd_WB_1] <= mux_o_WB_1;
+    end
 end
 
  //core0 read  

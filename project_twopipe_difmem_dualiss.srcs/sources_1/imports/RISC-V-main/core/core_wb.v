@@ -81,6 +81,10 @@ wire [31:0]IDEX_preg_data_2_out_0;
 wire [31:0]IDEX_preg_data_1_out_1;
 wire [31:0]IDEX_preg_data_2_out_1;
 
+// reg bank signals
+wire stall_EX_0, stall_EX_1;
+
+
 // pc logic unit signals
 wire [31:0] pc_o;
 wire [31:0] pc_i;
@@ -95,6 +99,7 @@ wire funct3_0, funct3_1;
 wire L_ID, L;
 wire [4:0] opcode_0, opcode_1, rd_ID_1, rd_ID_0, rs1_ID_0, rs1_ID_1, rs2_ID_0, rs2_ID_1, rd_EX_0, rd_EX_1;
 wire [4:0] rd_WB_0, rd_WB_1;
+wire issue_stall_0, issue_stall_1;
 
 // dual forwarding unit signals
 // -- for core_0
@@ -111,6 +116,7 @@ wire [4:0]  rd_MEM_1;
 wire [6:0] wb_MEM_1;
 // wire       rf_wen_WB_1; // already declared
 wire [2:0] mux2_ctrl_EX_1,  mux4_ctrl_EX_1;
+wire priority_MEM, priority_WB;
 
 wire [31:0] pc_ID_0;
 wire [31:0] pc_ID_1;
