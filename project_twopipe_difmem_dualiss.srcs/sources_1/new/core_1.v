@@ -36,7 +36,8 @@ module core_1(input reset_i, //active-low reset
     input [31:0] IDEX_preg_data2,  
     
     input  issue_stall_1,  /*comes from issue unit */ 
-    output stall_IF,  /*goes to issue unit*/  
+    output stall_IF,  /*goes to issue unit*/ 
+    input muldiv_stall_EX, 
 
     // dual hazard unit signals
     input dual_hazard_stall_1,
@@ -97,8 +98,6 @@ wire        mret_ID; //driven high when the instruction in ID stage is MRET.
 //control unit outputs
 wire ctrl_unit_muldiv_start;
 wire ctrl_unit_muldiv_sel;
-wire [1:0] ctrl_unit_op_mul;
-wire [1:0] ctrl_unit_op_div;
 
 wire [3:0] ctrl_unit_alu_func;
 wire [1:0] ctrl_unit_csr_alu_func;
@@ -139,12 +138,6 @@ reg        IDEX_preg_misaligned; //driven high when the second part of a misalig
 //END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS
 
 //EX SIGNALS--------EX SIGNALS--------EX SIGNALS--------EX SIGNALS--------EX SIGNALS--------EX SIGNALS--------EX SIGNALS
-wire muldiv_start;
-wire muldiv_sel;
-wire [1:0] op_mul, op_div;
-wire muldiv_done_EX;
-wire [31:0] R_EX;
-wire muldiv_stall_EX;
 
 //signals from previous stage
 wire [6:0]  wb_EX;
@@ -497,20 +490,6 @@ end
 
 //EX STAGE---------------------------------------------------------------------------------
 
-//instantiate MULDIV
-MULDIV_top MULDIV(.clk(clk_i),
-                  .start(muldiv_start),
-                  .reset(reset_i),
-                  .in_A(mux2_o_EX),
-                  .in_B(mux4_o_EX),
-                  .op_div(op_div),
-                  .op_mul(op_mul),
-                  .muldiv_sel(muldiv_sel),
-                  .R(R_EX),
-                  .muldiv_done(muldiv_done_EX));
-
-assign muldiv_stall_EX = muldiv_start & ~muldiv_done_EX;
-
 hazard_detection_unit HZRD_DET_UNIT (.rs1(rs1_ID),
                                      .rs2(rs2_ID),
                                      .opcode(IFID_preg_instr[6:2]),
@@ -541,10 +520,6 @@ assign mux7_ctrl_EX = ex_EX[11];
 assign mux8_ctrl_EX = ex_EX[12];
 assign J            = ex_EX[13]; //jump
 assign B            = ex_EX[14]; //branch
-assign muldiv_start = ex_EX[15];
-assign muldiv_sel   = ex_EX[16];
-assign op_mul       = ex_EX[18:17];
-assign op_div       = ex_EX[20:19];
 assign L            = (!wb_EX[3] && wb_EX[6:5] == 2'b1) ? 1'b1 : 1'b0; //load
 assign mem_wen_EX   = muldiv_stall_EX ? 1'b1 : (csr_ex_flush ? 1'b1 : mem_EX[0]);
 assign mem_length_EX = mem_EX[2:1];
@@ -568,7 +543,7 @@ assign mux4_o_EX = mux4_ctrl_EX == 3'b100 ? aluout_MEM_0
                  : aluout_MEM;
 
 assign mux5_o_EX = mux5_ctrl_EX ? pc_EX	 : mux2_o_EX;
-assign mux6_o_EX = mux6_ctrl_EX[1] ? R_EX : (mux6_ctrl_EX[0] ? csr_reg_out : aluout_EX);
+assign mux6_o_EX = mux6_ctrl_EX[0] ? csr_reg_out : aluout_EX;
 assign mux7_o_EX = mux7_ctrl_EX ? imm_EX : csr_alu_out;
 
 assign mux8_o_EX = mux8_ctrl_EX ? imm_EX : mux2_o_EX;

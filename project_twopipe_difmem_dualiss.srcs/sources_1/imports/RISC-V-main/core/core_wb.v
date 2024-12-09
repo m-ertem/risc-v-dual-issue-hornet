@@ -100,6 +100,8 @@ wire L_ID, L;
 wire [4:0] opcode_0, opcode_1, rd_ID_1, rd_ID_0, rs1_ID_0, rs1_ID_1, rs2_ID_0, rs2_ID_1, rd_EX_0, rd_EX_1;
 wire [4:0] rd_WB_0, rd_WB_1;
 wire issue_stall_0, issue_stall_1;
+wire pipe_0_occuppied_w_branch_IF;
+wire muldiv_stall_EX;
 
 // dual forwarding unit signals
 // -- for core_0
@@ -179,6 +181,7 @@ core_0    #(.reset_vector(reset_vector))
     // .priority_overwrite(priority_overwrite),
     .stall_IF(stall_IF_0),
     .priority(priority_out_to_core_0),
+    .muldiv_stall_EX(muldiv_stall_EX),
     
     // dual hazard
     .priority_out(priority_out_to_dual_hazard_unit),
@@ -265,6 +268,7 @@ core_1    #(.reset_vector(reset_vector))
     //issue unit//
     .issue_stall_1(issue_stall_1),
     .stall_IF(stall_IF_1),
+    .muldiv_stall_EX(muldiv_stall_EX),
     
     //dual hazard
     .rd_ID(rd_ID_1),
@@ -381,6 +385,7 @@ issue_unit ISSUE_UNIT(
     .stall_IF_1(stall_IF_1),
     .dual_hazard_stall_0(dual_hazard_stall_0),
     .dual_hazard_stall_1(dual_hazard_stall_1),
+    .pipe_0_occuppied_w_branch_IF(pipe_0_occuppied_w_branch_IF),
     .issue_stall_0(issue_stall_0),
     .issue_stall_1(issue_stall_1),
     .instr_i(instr_i),
@@ -413,6 +418,8 @@ dual_hazard_unit DUAL_HAZARD_UNIT(
     .pc_ID_1(pc_ID_1),
     .pc_EX_0(pc_EX_0),
     .pc_EX_1(pc_EX_1),
+
+    .pipe_0_occuppied_w_branch_IF(pipe_0_occuppied_w_branch_IF),
 
     .dual_hazard_stall_0(dual_hazard_stall_0),
     .dual_hazard_stall_1(dual_hazard_stall_1)

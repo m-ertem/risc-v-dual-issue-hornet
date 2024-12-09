@@ -40,7 +40,8 @@ module core_0(input reset_i, //active-low reset
             input  priority, // comes from issue unit
             input  issue_stall_0,  /*comes from issue unit */
             output stall_IF,// goes to issue unit
-            
+            output muldiv_stall_EX, // goes core_1
+
             // dual_hazard_unit signals
             input dual_hazard_stall_0,
             input dual_hazard_stall_1,
@@ -153,7 +154,6 @@ wire muldiv_sel;
 wire [1:0] op_mul, op_div;
 wire muldiv_done_EX;
 wire [31:0] R_EX;
-wire muldiv_stall_EX;
 
 //signals from previous stage
 wire [6:0]  wb_EX;

@@ -21,6 +21,8 @@ module dual_hazard_unit (
     input[31:0] pc_ID_1,
     input[31:0] pc_EX_0,
     input[31:0] pc_EX_1,
+
+    output pipe_0_occuppied_w_branch_IF,
     
     output dual_hazard_stall_0,
     output dual_hazard_stall_1
@@ -33,6 +35,8 @@ wire uses_rs1_0, uses_rs2_0;
 wire valid_EX_0, valid_EX_1;
 reg stall_flag_0, stall_trigger_0, stall_once_0;
 reg stall_flag_1, stall_trigger_1, stall_once_1;
+
+assign pipe_0_occuppied_w_branch_IF = opcode_0[4:1] == 4'b1100 ? 1'b1 : 1'b0;
 
 assign uses_rs1_0 = opcode_0[4:1] == 4'b1100 || //JALR and branch instructions
                     opcode_0[4:0] == 5'b00100 || //register-immediate arithmetic
@@ -109,6 +113,7 @@ begin
             stall_once_1    = 1'b0;
         end
         
+        // detecs cross-dependencies in the case of a load operation
         if(valid_EX_1 && L_EX_1 && (((rs1_ID_0 == rd_EX_1) && uses_rs1_0 && (rs1_ID_0 != 5'b0)) || ((rs2_ID_0 == rd_EX_1) && uses_rs2_0 && (rs2_ID_0 != 5'b0))))
         begin
             stall_once_0 = 1'b1;

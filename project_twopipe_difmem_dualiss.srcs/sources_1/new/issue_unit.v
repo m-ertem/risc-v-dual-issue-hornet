@@ -5,6 +5,7 @@ module issue_unit(
     input stall_IF_1,
     input dual_hazard_stall_0,
     input dual_hazard_stall_1,
+    input pipe_0_occuppied_w_branch_IF,
     output reg issue_stall_0,
     output reg issue_stall_1,
     output [31:0] instr_i, 
@@ -16,6 +17,8 @@ module issue_unit(
 
     wire [4:0] opcode_0;
     wire [4:0] opcode_1;
+    wire       funct7_0;
+    wire       funct7_1;
     
     reg priority_tmp;
 
@@ -31,6 +34,8 @@ module issue_unit(
 
     assign opcode_0 = instr_i_tmp[6:2];
     assign opcode_1 = instr_i_1_tmp[6:2];
+    assign funct7_0 = instr_i_tmp[25];
+    assign funct7_1 = instr_i_1_tmp[25];
 
     // assign first instruction's type
     always@(*) begin
@@ -54,7 +59,16 @@ module issue_unit(
 
     // assign instructions to pipelines
     always@(*) begin
-        if(instr_0_type == mem && instr_1_type == mem && !stall_IF_0 && !stall_IF_1)
+        if(pipe_0_occuppied_w_branch_IF && stall_IF_0)
+        begin
+            instr_i_reg   = instr_i_tmp;
+            instr_i_1_reg = instr_i_1_tmp;
+            priority_tmp  = 1'b0;
+            pc_increment  = 0;         
+            issue_stall_0 = 0; // already stalled     
+            issue_stall_1 = 1; // NOP
+        end
+        else if(instr_0_type == mem && instr_1_type == mem && !stall_IF_0 && !stall_IF_1)
         begin
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
@@ -165,12 +179,24 @@ module issue_unit(
         /////////////////////////////////
         else if(instr_0_type == mem && instr_1_type == ALU && !stall_IF_0 && !stall_IF_1)
         begin
-            instr_i_reg   = instr_i_1_tmp;
-            instr_i_1_reg = instr_i_tmp;
-            priority_tmp  = 1'b1;
-            pc_increment  = 8;
-            issue_stall_0 = 0;
-            issue_stall_1 = 0;   
+            if(funct7_1) // if MULDIV operation
+            begin
+                instr_i_reg   = instr_i_1_tmp;
+                instr_i_1_reg = instr_i_tmp;
+                priority_tmp  = 1'b1;
+                pc_increment  = 4;
+                issue_stall_0 = 1; // NOP
+                issue_stall_1 = 0;   
+            end
+            else
+            begin
+                instr_i_reg   = instr_i_1_tmp;
+                instr_i_1_reg = instr_i_tmp;
+                priority_tmp  = 1'b1;
+                pc_increment  = 8;
+                issue_stall_0 = 0;
+                issue_stall_1 = 0;   
+            end
         end
         else if(instr_0_type == mem && instr_1_type == ALU && stall_IF_0 && !stall_IF_1)
         begin
@@ -202,21 +228,45 @@ module issue_unit(
         ////////////////////////////////
         else if(instr_0_type == ALU && instr_1_type == mem && !stall_IF_0 && !stall_IF_1)
         begin
-            instr_i_reg = instr_i_tmp;
-            instr_i_1_reg = instr_i_1_tmp;
-            priority_tmp = 1'b0;
-            pc_increment = 8;
-            issue_stall_0 = 0;
-            issue_stall_1 = 0;      
+            if(funct7_0) // if MULDIV operation
+            begin
+                instr_i_reg = instr_i_tmp;
+                instr_i_1_reg = instr_i_1_tmp;
+                priority_tmp = 1'b0;
+                pc_increment = 4;
+                issue_stall_0 = 0;
+                issue_stall_1 = 1; // NOP   
+            end   
+            else
+            begin
+                instr_i_reg = instr_i_tmp;
+                instr_i_1_reg = instr_i_1_tmp;
+                priority_tmp = 1'b0;
+                pc_increment = 8;
+                issue_stall_0 = 0;
+                issue_stall_1 = 0;   
+            end   
         end
         else if(instr_0_type == ALU && instr_1_type == mem && stall_IF_0 && !stall_IF_1)
         begin
-            instr_i_reg = instr_i_1_tmp;
-            instr_i_1_reg = instr_i_tmp;
-            priority_tmp = 1'b1;
-            pc_increment = 4;
-            issue_stall_0 = 0; // already stalled
-            issue_stall_1 = 0;      
+            if(funct7_0) // if MULDIV operation
+            begin
+                instr_i_reg = instr_i_1_tmp;
+                instr_i_1_reg = instr_i_tmp;
+                priority_tmp = 1'b1;
+                pc_increment = 0;
+                issue_stall_0 = 0; // already stalled
+                issue_stall_1 = 1; // NOP      
+            end           
+            else
+            begin
+                instr_i_reg = instr_i_1_tmp;
+                instr_i_1_reg = instr_i_tmp;
+                priority_tmp = 1'b1;
+                pc_increment = 4;
+                issue_stall_0 = 0; // already stalled
+                issue_stall_1 = 0;      
+            end
         end
         else if(instr_0_type == ALU && instr_1_type == mem && !stall_IF_0 && stall_IF_1)
         begin
@@ -239,21 +289,33 @@ module issue_unit(
         ///////////////////////////////
         else if(instr_0_type == ALU && instr_1_type == branch && !stall_IF_0 && !stall_IF_1)
         begin
-            instr_i_reg   = instr_i_1_tmp;
-            instr_i_1_reg = instr_i_tmp;
-            priority_tmp  = 1'b1;
+            instr_i_reg   = instr_i_tmp;
+            instr_i_1_reg = instr_i_1_tmp;
+            priority_tmp  = 1'b0;
             pc_increment  = 4;
-            issue_stall_0 = 1; // NOP
-            issue_stall_1 = 0;  
+            issue_stall_0 = 0; //
+            issue_stall_1 = 1; // NOP  
         end
         else if(instr_0_type == ALU && instr_1_type == branch && stall_IF_0 && !stall_IF_1)
         begin
-            instr_i_reg   = instr_i_1_tmp;
-            instr_i_1_reg = instr_i_tmp;
-            priority_tmp  = 1'b1;
-            pc_increment  = 4;
-            issue_stall_0 = 0; // already stalled
-            issue_stall_1 = 0;  
+            if(funct7_0)
+            begin
+                instr_i_reg   = instr_i_1_tmp;
+                instr_i_1_reg = instr_i_tmp;
+                priority_tmp  = 1'b1;
+                pc_increment  = 0;
+                issue_stall_0 = 0; // already stalled
+                issue_stall_1 = 1; // NOP  
+            end
+            else
+            begin
+                instr_i_reg   = instr_i_1_tmp;
+                instr_i_1_reg = instr_i_tmp;
+                priority_tmp  = 1'b1;
+                pc_increment  = 4;
+                issue_stall_0 = 0; // already stalled
+                issue_stall_1 = 0;  
+            end
         end
         else if(instr_0_type == ALU && instr_1_type == branch && !stall_IF_0 && stall_IF_1)
         begin
@@ -350,21 +412,45 @@ module issue_unit(
         ///////////////////////////////
         else if(instr_0_type == ALU && instr_1_type == ALU && !stall_IF_0 && !stall_IF_1)
         begin
-            instr_i_reg   = instr_i_tmp;
-            instr_i_1_reg = instr_i_1_tmp;
-            priority_tmp  = 1'b0;
-            pc_increment  = 8;
-            issue_stall_0 = 0;
-            issue_stall_1 = 0;
+            if(funct7_0 || funct7_1)
+            begin
+                instr_i_reg   = instr_i_tmp;
+                instr_i_1_reg = instr_i_1_tmp;
+                priority_tmp  = 1'b0;
+                pc_increment  = 4;
+                issue_stall_0 = 0;
+                issue_stall_1 = 1; // NOP
+            end
+            else
+            begin
+                instr_i_reg   = instr_i_tmp;
+                instr_i_1_reg = instr_i_1_tmp;
+                priority_tmp  = 1'b0;
+                pc_increment  = 8;
+                issue_stall_0 = 0;
+                issue_stall_1 = 0;
+            end
         end
         else if(instr_0_type == ALU && instr_1_type == ALU && stall_IF_0 && !stall_IF_1)
         begin
-            instr_i_reg   = instr_i_1_tmp;
-            instr_i_1_reg = instr_i_tmp;
-            priority_tmp  = 1'b1;
-            pc_increment  = 4;
-            issue_stall_0 = 0; // already stalled
-            issue_stall_1 = 0;
+            if(funct7_0)
+            begin
+                instr_i_reg   = instr_i_1_tmp;
+                instr_i_1_reg = instr_i_tmp;
+                priority_tmp  = 1'b1;
+                pc_increment  = 0;
+                issue_stall_0 = 0; // already stalled
+                issue_stall_1 = 1; // NOP
+            end
+            else
+            begin
+                instr_i_reg   = instr_i_1_tmp;
+                instr_i_1_reg = instr_i_tmp;
+                priority_tmp  = 1'b1;
+                pc_increment  = 4;
+                issue_stall_0 = 0; // already stalled
+                issue_stall_1 = 0;
+            end
         end
         else if(instr_0_type == ALU && instr_1_type == ALU && !stall_IF_0 && stall_IF_1)
         begin
