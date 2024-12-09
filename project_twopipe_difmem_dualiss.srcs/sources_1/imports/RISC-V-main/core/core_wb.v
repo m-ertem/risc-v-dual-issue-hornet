@@ -65,7 +65,6 @@ wire rf_wen_WB_0;
 wire rf_wen_WB_1;
 wire [4:0] rd_WB;
 wire stall_EX;
-wire misaligned_access_0;
 wire misaligned_access_1;
 wire [4:0] IDEX_preg_rs1_0;
 wire [4:0] IDEX_preg_rs2_0;
@@ -167,7 +166,6 @@ core_0    #(.reset_vector(reset_vector))
     .take_branch (take_branch_0),
     .csr_id_flush (csr_id_flush),
     .stall_EX (stall_EX_0),
-    .misaligned_access (misaligned_access_0),
     .IDEX_preg_rs1 (IDEX_preg_rs1_0),
     .IDEX_preg_rs2 (IDEX_preg_rs2_0),
     .stall_ID (stall_ID_0),
@@ -256,7 +254,6 @@ core_1    #(.reset_vector(reset_vector))
     .take_branch (take_branch_0),
     .csr_id_flush (csr_id_flush),
     .stall_EX (stall_EX_1),
-    .misaligned_access (misaligned_access_1),
     .IDEX_preg_rs1 (IDEX_preg_rs1_1),
     .IDEX_preg_rs2 (IDEX_preg_rs2_1),
     .stall_ID (stall_ID_1),
@@ -324,7 +321,6 @@ reg_bank REG_BANK(
     .stall_EX_0(stall_EX_0),
     .stall_EX_1(stall_EX_1),
     
-    .misaligned_access_0(misaligned_access_0),
     .misaligned_access_1(misaligned_access_1),
     .IDEX_preg_rs1_0(IDEX_preg_rs1_0),
     .IDEX_preg_rs2_0(IDEX_preg_rs2_0),

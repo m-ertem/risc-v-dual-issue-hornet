@@ -22,7 +22,6 @@ module core_1(input reset_i, //active-low reset
     ////////register outputs/////////
     output rf_wen_WB,
     output reg [31:0] mux_o_WB,
-    // output take_branch,
     output csr_id_flush,
     output stall_EX,
     output stall_ID,
@@ -113,7 +112,7 @@ wire       ctrl_unit_illegal_instr, ctrl_unit_ecall, ctrl_unit_ebreak;
 wire        mux_ctrl_ID; //control signal for all three muxes
 wire [6:0]  mux1_o_ID; //WB field
 wire [2:0]  mux2_o_ID; //MEM field
-wire [20:0] mux3_o_ID; //EX field
+wire [12:0] mux3_o_ID; //EX field
 
 wire [29:0] imm_dec_i; //immediate decoder input
 wire [31:0] imm_dec_o; //immediate decoder output
@@ -126,7 +125,7 @@ wire [6:0] wb_ID;
 reg [31:0] IDEX_preg_imm;
 reg [4:0]  IDEX_preg_rd;
 reg [31:0] IDEX_preg_pc;
-reg [20:0] IDEX_preg_ex;
+reg [12:0] IDEX_preg_ex;
 reg [2:0]  IDEX_preg_mem;
 reg [6:0]  IDEX_preg_wb;
 reg [11:0] IDEX_preg_csr_addr;
@@ -142,7 +141,7 @@ reg        IDEX_preg_misaligned; //driven high when the second part of a misalig
 //signals from previous stage
 wire [6:0]  wb_EX;
 wire [2:0]  mem_EX;
-wire [20:0] ex_EX;
+wire [12:0] ex_EX;
 wire [31:0] data1_EX, data2_EX, imm_EX;
 // wire [4:0]  rs1_EX, rs2_EX, rd_EX;
 // wire [4:0]  rd_EX;
@@ -159,16 +158,10 @@ wire [1:0]  csr_alu_func;
 wire [31:0] aluout_EX;
 wire [31:0] csr_alu_out;
 
-// wire        J, B, L; //jump, branch, load
-wire        J, B; //jump, branch
 wire        mem_wen_EX;
 wire [1:0]  mem_length_EX;
 wire        instr_addr_misaligned; //driven high when the calculated instruction address is misaligned, which causes an exception.
 wire        hazard_stall; //output of the hazard detection unit.
-//branch signals
-wire [31:0] branch_target_addr; //branch target address, calculated in EX stage.
-wire [31:0] branch_addr_calc; //intermediate value during address calculation.
-// wire        take_branch; //branch decision signal. 1 if the branch is taken, 0 otherwise.
 
 //pipeline registers
 reg [31:0] EXMEM_preg_imm;
@@ -288,15 +281,6 @@ csr_unit CSR_UNIT(.clk_i(clk_i),
                   .instr_addr_misaligned_i(instr_addr_misaligned));
 
 //IF STAGE---------------------------------------------------------------------------------
-//assign mux2_ctrl_IF = stall_IF;
-//assign mux3_ctrl_IF = take_branch;
-
-//assign mux1_o_IF = mux1_ctrl_IF ? mepc : irq_addr;
-//assign mux2_o_IF = mux2_ctrl_IF ? pc_o : pc_o + 32'd4; //this mux is responsible for stalling the IF stage.
-//assign mux3_o_IF = mux3_ctrl_IF ? branch_target_addr : mux2_o_IF; //branch mux
-//assign mux4_o_IF = mux4_ctrl_IF ? mux3_o_IF : mux1_o_IF;
-
-//assign pc_i = reset_i ? mux4_o_IF : reset_vector;
 assign instr_addr_o = pc_i;
 
 assign stall_IF = hazard_stall | muldiv_stall_EX | misaligned_access | data_stall_i | csr_stall | dual_hazard_stall_1;
@@ -363,13 +347,7 @@ assign mux1_o_ID   = mux_ctrl_ID ? 7'h0c : {ctrl_unit_wb_mux,
 
 assign mux2_o_ID   = mux_ctrl_ID ? 3'b1 : {ctrl_unit_mem_len, ctrl_unit_mem_wen};
 
-assign mux3_o_ID   = mux_ctrl_ID ? 21'b0 : {ctrl_unit_op_div,
-                                             ctrl_unit_op_mul,
-                                             ctrl_unit_muldiv_sel,
-                                             ctrl_unit_muldiv_start,
-                                             ctrl_unit_B,
-                                             ctrl_unit_J,
-                                             ctrl_unit_ex_mux8,
+assign mux3_o_ID   = mux_ctrl_ID ? 13'b0 : {ctrl_unit_ex_mux8,
                                              ctrl_unit_ex_mux7,
                                              ctrl_unit_ex_mux6,
                                              ctrl_unit_ex_mux5,
@@ -427,7 +405,7 @@ begin
 		IDEX_preg_wb <= 7'h0c;
 		IDEX_preg_mem <= 3'b1;
 		IDEX_preg_csr_addr <= 12'b0;
-		IDEX_preg_ex <= 21'b0;
+		IDEX_preg_ex <= 13'b0;
 		IDEX_preg_pc <= 32'b0;
 		{IDEX_preg_rs1, IDEX_preg_rs2, IDEX_preg_rd} <= 15'b0;
 		IDEX_preg_imm  <= 32'b0;
@@ -441,7 +419,7 @@ begin
 		IDEX_preg_wb <= 7'h0c;
 		IDEX_preg_mem <= 3'b1;
 		IDEX_preg_csr_addr <= 12'b0;
-		IDEX_preg_ex <= 21'b0;
+		IDEX_preg_ex <= 13'b0;
 		IDEX_preg_pc <= 32'b0;
 		{IDEX_preg_rs1, IDEX_preg_rs2, IDEX_preg_rd} <= 15'b0;
 		IDEX_preg_imm  <= 32'b0;
@@ -518,8 +496,6 @@ assign mux5_ctrl_EX = ex_EX[8];
 assign mux6_ctrl_EX = ex_EX[10:9];
 assign mux7_ctrl_EX = ex_EX[11];
 assign mux8_ctrl_EX = ex_EX[12];
-assign J            = ex_EX[13]; //jump
-assign B            = ex_EX[14]; //branch
 assign L            = (!wb_EX[3] && wb_EX[6:5] == 2'b1) ? 1'b1 : 1'b0; //load
 assign mem_wen_EX   = muldiv_stall_EX ? 1'b1 : (csr_ex_flush ? 1'b1 : mem_EX[0]);
 assign mem_length_EX = mem_EX[2:1];
@@ -568,11 +544,6 @@ ALU ALU (.src1(mux1_o_EX),
          .func(alu_func), 
          .alu_out(aluout_EX));
 
-//branch logic and address calculation
-// assign take_branch = J | (B & aluout_EX[0]);
-assign branch_addr_calc = mux5_o_EX + imm_EX;
-assign branch_target_addr[31:1] = branch_addr_calc[31:1];
-assign branch_target_addr[0] = (!mux5_ctrl_EX & J) ? 1'b0 : branch_addr_calc[0]; //clear the least-significant bit if the instruction is JALR.
 // assign instr_addr_misaligned = take_branch & (branch_target_addr[1:0] != 2'd0);
 assign instr_addr_misaligned = 1'b0;
 assign stall_EX = muldiv_stall_EX | data_stall_i;
