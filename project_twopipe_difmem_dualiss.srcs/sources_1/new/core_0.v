@@ -3,13 +3,6 @@ module core_0(input reset_i, //active-low reset
             input clk_i,
             input  [31:0] instr_i,              //instruction input
             output [31:0] instr_addr_o,         //instruction address output
-            input         instr_access_fault_i, //instruction access fault exception signal
-
-            input         meip_i, mtip_i, msip_i, //interrupts
-            input  [15:0] fast_irq_i,
-
-            output irq_ack_o,
-            
             
             ////////register outputs/////////
             output rf_wen_WB,
@@ -65,7 +58,23 @@ module core_0(input reset_i, //active-low reset
             output [31:0] pc_ID,
             output [31:0] pc_EX,
             output [31:0] pc_MEM,
-            output [31:0] pc_WB
+            output [31:0] pc_WB,
+
+            // csr signals
+            input         csr_if_flush, csr_ex_flush, csr_mem_flush,
+            input  [31:0] csr_reg_out,
+            output reg [31:0] csr_pc_input,
+            output reg [31:0] IFID_preg_instr,
+            output [11:0] csr_addr_WB,
+            output [31:0] imm_WB,
+            output        csr_wen_WB,
+            output        mret_ID, //driven high when the instruction in ID stage is MRET.
+            output        mret_WB,
+            output reg    IDEX_preg_dummy, //indicates if the instruction in the EX stage is dummy, i.e. a flushed instruction, nop.
+            output reg    EXMEM_preg_dummy, //indicates if the instruction in MEM stage is dummy, i.e. a flushed instruction, nop.
+            output        ctrl_unit_illegal_instr, ctrl_unit_ecall, ctrl_unit_ebreak,
+            output        instr_addr_misaligned  //driven high when the calculated instruction address is misaligned, which causes an exception.
+
             ); //interrupt acknowledge signal. driven high for one cycle when an external interrupt is handled.
 
 parameter reset_vector = 32'h0; //pc is set to this address when a reset occurs.
@@ -79,7 +88,6 @@ wire [31:0] mux1_o_IF, mux2_o_IF, mux3_o_IF, mux4_o_IF; //mux outputs
 // reg  [31:0] pc_o; //pc output
 
 //pipeline registers
-reg [31:0] IFID_preg_instr;
 reg [31:0] IFID_preg_pc;
 reg [31:0] IFID_preg_pc_0;
 reg        IFID_preg_dummy; //indicates if the instruction in the ID stage is dummy, i.e. a flushed instruction, nop.
@@ -92,7 +100,6 @@ reg IFID_preg_priority_ID;
 wire [31:0] data1_ID, data2_ID;
 wire [11:0] csr_addr_ID; //CSR register address
 wire        csr_wen_ID;
-wire        mret_ID; //driven high when the instruction in ID stage is MRET.
 wire        priority_ID;
 
 //control unit outputs
@@ -110,7 +117,6 @@ wire [1:0] ctrl_unit_mem_len;
 wire       ctrl_unit_mem_wen, ctrl_unit_wb_rf_wen, ctrl_unit_wb_csr_wen;
 wire [1:0] ctrl_unit_wb_mux;
 wire       ctrl_unit_wb_sign;
-wire       ctrl_unit_illegal_instr, ctrl_unit_ecall, ctrl_unit_ebreak;
 //mux signals
 wire        mux_ctrl_ID; //control signal for all three muxes
 wire [6:0]  mux1_o_ID; //WB field
@@ -129,7 +135,6 @@ reg [20:0] IDEX_preg_ex;
 reg [2:0]  IDEX_preg_mem;
 reg [6:0]  IDEX_preg_wb;
 reg [11:0] IDEX_preg_csr_addr;
-reg        IDEX_preg_dummy; //indicates if the instruction in the EX stage is dummy, i.e. a flushed instruction, nop.
 reg        IDEX_preg_mret; //driven high when the instruction in EX stage is MRET.
 reg        IDEX_preg_misaligned; //driven high when the second part of a misaligned access is being executed in EX stage.
 reg        IDEX_preg_priority;
@@ -167,7 +172,6 @@ wire [31:0] aluout_EX;
 wire [31:0] csr_alu_out;
 
 wire        J, B; //jump, branch
-wire        instr_addr_misaligned; //driven high when the calculated instruction address is misaligned, which causes an exception.
 wire        hazard_stall; //output of the hazard detection unit.
 //branch signals
 wire [31:0] branch_addr_calc; //intermediate value during address calculation.
@@ -182,7 +186,6 @@ reg [31:0] EXMEM_preg_pc;
 reg [11:0] EXMEM_preg_csr_addr;
 reg [2:0]  EXMEM_preg_mem;
 reg [6:0]  EXMEM_preg_wb;
-reg        EXMEM_preg_dummy; //indicates if the instruction in MEM stage is dummy, i.e. a flushed instruction, nop.
 reg        EXMEM_preg_mret; //driven high when the instruction in MEM stage is MRET.
 reg        EXMEM_preg_misaligned; //driven high when the instruction in MEM stage is a misaligned access.
 reg        EXMEM_preg_priority;
@@ -190,9 +193,7 @@ reg        EXMEM_preg_priority;
 
 //MEM SIGNALS--------MEM SIGNALS--------MEM SIGNALS--------MEM SIGNALS--------MEM SIGNALS--------MEM SIGNALS--------MEM SIGNALS
 wire data_stall_i; //data memory stall input. pipeline is stalled when a memory access request is answered with a stall.
-wire data_err_i;   //data memory access error input. this will trigger a store/load access fault.
 assign data_stall_i = 1'b0;
-assign data_err_i = 1'b0;
 
 //signals from previous stage
 // wire [6:0]  wb_MEM;
@@ -223,20 +224,14 @@ wire        load_sign;
 wire [1:0]  mem_length_WB;
 wire [1:0]  mux_ctrl_WB;
 // wire        rf_wen_WB, csr_wen_WB;
-wire        csr_wen_WB;
-wire [11:0] csr_addr_WB;
-wire [31:0] aluout_WB, imm_WB;
-wire        mret_WB;
+wire [31:0] aluout_WB;
 //END WB SIGNALS--------END WB SIGNALS--------END WB SIGNALS--------END WB SIGNALS--------END WB SIGNALS--------END WB SIGNALS
 
 //CSR SIGNALS--------CSR SIGNALS--------CSR SIGNALS--------CSR SIGNALS--------CSR SIGNALS--------CSR SIGNALS
-wire csr_if_flush, csr_ex_flush, csr_mem_flush;
 wire csr_stall; //stalls IF and ID stages
 wire [31:0] csr_pcin_mux1_o, csr_pcin_mux2_o;
-reg [31:0] csr_pc_input;
 wire [31:0] irq_addr; //interrupt handler address from CSR unit
 wire [31:0] mepc; //mepc from CSR unit
-wire [31:0] csr_reg_out;
 
 //END CSR SIGNALS--------END CSR SIGNALS--------END CSR SIGNALS--------END CSR SIGNALS--------END CSR SIGNALS
 assign csr_pcin_mux1_o = csr_ex_flush ? pc_EX : pc_ID;
@@ -253,53 +248,8 @@ begin
 	else
 		csr_pc_input <= csr_pcin_mux2_o;
 end
-//instantiate CSR Unit
-csr_unit CSR_UNIT(.clk_i(clk_i),
-                  .reset_i(reset_i),
-                  .pc_i(csr_pc_input),
-                  .csr_r_addr_i(IFID_preg_instr[31:20]),
-                  .csr_w_addr_i(csr_addr_WB),
-                  .csr_reg_i(imm_WB),
-                  .csr_wen_i(csr_wen_WB),
-                  .meip_i(meip_i),
-                  .mtip_i(mtip_i),
-                  .msip_i(msip_i),
-                  .fast_irq_i(fast_irq_i),
-                  .take_branch_i(take_branch),
-                  .mret_id_i(mret_ID),
-                  .mret_wb_i(mret_WB),
-                  .misaligned_ex(IDEX_preg_misaligned),
-                  .instr_access_fault_i(instr_access_fault_i),
-                  .data_err_i(data_err_i),
-
-                  .csr_reg_o(csr_reg_out),
-                  .mepc_o(mepc),
-                  .irq_addr_o(irq_addr),
-                  .mux1_ctrl_o(mux1_ctrl_IF),
-                  .mux2_ctrl_o(mux4_ctrl_IF),
-                  .ack_o(irq_ack_o),
-                  .mem_wen_i(1'b0),
-                  .ex_dummy_i(IDEX_preg_dummy),
-                  .mem_dummy_i(EXMEM_preg_dummy),
-                  .csr_if_flush_o(csr_if_flush),
-                  .csr_id_flush_o(csr_id_flush),
-                  .csr_ex_flush_o(csr_ex_flush),
-                  .csr_mem_flush_o(csr_mem_flush),
-                  .illegal_instr_i(ctrl_unit_illegal_instr),
-                  .ecall_i(ctrl_unit_ecall),
-                  .ebreak_i(ctrl_unit_ebreak),
-                  .instr_addr_misaligned_i(instr_addr_misaligned));
 
 //IF STAGE---------------------------------------------------------------------------------
-/*assign mux2_ctrl_IF = stall_IF;
-assign mux3_ctrl_IF = take_branch;
-
-assign mux1_o_IF = mux1_ctrl_IF ? mepc : irq_addr;
-assign mux2_o_IF = mux2_ctrl_IF ? pc_o : pc_o + 32'd4; //this mux is responsible for stalling the IF stage.
-assign mux3_o_IF = mux3_ctrl_IF ? branch_target_addr : mux2_o_IF; //branch mux
-assign mux4_o_IF = mux4_ctrl_IF ? mux3_o_IF : mux1_o_IF;
-
-assign pc_i = reset_i ? mux4_o_IF : reset_vector;*/
 assign instr_addr_o = pc_i;
 
 assign stall_IF = hazard_stall | muldiv_stall_EX | data_stall_i | csr_stall | dual_hazard_stall_0; 

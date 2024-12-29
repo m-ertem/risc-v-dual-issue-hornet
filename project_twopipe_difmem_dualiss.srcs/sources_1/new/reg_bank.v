@@ -12,7 +12,8 @@ module reg_bank(input clk_i,
                 input [31:0] mux_o_WB_0,
                 input [31:0] mux_o_WB_1,
                 input take_branch_0,
-                input csr_id_flush,
+                input csr_id_flush_0,
+                input csr_id_flush_1,
                 
                 input stall_EX_0,
                 input stall_EX_1,
@@ -78,7 +79,7 @@ begin
 		{IDEX_preg_data1_0, IDEX_preg_data2_0} <= 64'b0;
 	end
 
-	else if(take_branch_0 || csr_id_flush) //flush the pipe
+	else if(take_branch_0 || csr_id_flush_0) //flush the pipe
 	begin
 		{IDEX_preg_data1_0, IDEX_preg_data2_0} <= 64'b0;
 	end
@@ -122,7 +123,7 @@ begin
 		{IDEX_preg_data1_1, IDEX_preg_data2_1} <= 64'b0;
 	end
 
-	else if(csr_id_flush) //flush the pipe
+	else if(csr_id_flush_1) //flush the pipe
 	begin
 		{IDEX_preg_data1_1, IDEX_preg_data2_1} <= 64'b0;
 	end

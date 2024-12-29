@@ -74,7 +74,6 @@ wire stall_ID;
 //wire [4:0] rs1_ID;
 //wire [4:0] rs2_ID;
 //wire take_branch;
-wire csr_id_flush;
 wire [31:0]IDEX_preg_data_1_out_0;
 wire [31:0]IDEX_preg_data_2_out_0;
 wire [31:0]IDEX_preg_data_1_out_1;
@@ -129,6 +128,40 @@ wire [31:0] pc_WB_0;
 wire [31:0] pc_WB_1;
 //
 wire [31:0] pc_i_1;
+
+// csr signals
+wire [31:0] csr_reg_out_0;
+reg  [31:0] csr_pc_input;
+wire [31:0] csr_pc_input_0;
+wire [31:0] csr_pc_input_1;
+wire [31:0] IFID_preg_instr_0;
+wire [11:0] csr_addr_WB_0;
+wire [31:0] imm_WB_0;
+wire csr_wen_WB_0;
+wire mret_ID_0; 
+wire mret_WB_0;
+wire mem_wen;
+wire IDEX_preg_dummy_0;
+wire EXMEM_preg_dummy_0;
+wire IDEX_preg_dummy_1;
+wire EXMEM_preg_dummy_1;
+wire csr_if_flush_0;
+wire csr_id_flush_0;
+wire csr_ex_flush_0; 
+wire csr_mem_flush_0;
+wire csr_if_flush_1; 
+wire csr_id_flush_1;
+wire csr_ex_flush_1; 
+wire csr_mem_flush_1;
+wire IDEX_preg_misaligned;
+wire ctrl_unit_illegal_instr_0; 
+wire ctrl_unit_ecall_0; 
+wire ctrl_unit_ebreak_0;
+wire instr_addr_misaligned_0;
+wire [31:0] mepc;
+wire [31:0] irq_addr;
+wire mux1_ctrl_IF;
+wire mux4_ctrl_IF;
 //---------------------------------------//
 
 core_0    #(.reset_vector(reset_vector))
@@ -137,34 +170,16 @@ core_0    #(.reset_vector(reset_vector))
     .clk_i(clk_i),
     .reset_i(reset_i), //active-low, asynchronous reset
 
-    //Data memory interface
-    //.data_addr_o(data_addr_o),
-    //.data_i(data_i),
-    //.data_o(data_o),
-    //.data_wmask_o(data_wmask_o),
-    //.data_wen_o(data_wen_o), //active-low
-    //.data_req_o(data_req_o),
-    //.data_stall_i(data_stall_i),
-    //.data_err_i(data_err_i), 
-
     //Instruction memory interface
     .instr_addr_o(instr_addr_o),
     .instr_i(instr_i),
-    .instr_access_fault_i(instr_access_fault_i),
-
-    //Interrupts
-    .meip_i(meip_i),
-    .mtip_i(mtip_i),
-    .msip_i(msip_i),
-    .fast_irq_i(fast_irq_i),
-    .irq_ack_o(irq_ack_o),
     
     ////////register bank/////////
     .rf_wen_WB (rf_wen_WB_0),
     .rd_WB (rd_WB_0),
     .mux_o_WB (mux_o_WB_0),
     .take_branch (take_branch_0),
-    .csr_id_flush (csr_id_flush),
+    .csr_id_flush (csr_id_flush_0),
     .stall_EX (stall_EX_0),
     .IDEX_preg_rs1 (IDEX_preg_rs1_0),
     .IDEX_preg_rs2 (IDEX_preg_rs2_0),
@@ -214,7 +229,27 @@ core_0    #(.reset_vector(reset_vector))
     .pc_ID(pc_ID_0),
     .pc_EX(pc_EX_0),
     .pc_MEM(pc_MEM_0),
-    .pc_WB(pc_WB_0)
+    .pc_WB(pc_WB_0),
+
+    // csr signals
+    .csr_if_flush(csr_if_flush_0), 
+    .csr_ex_flush(csr_ex_flush_0), 
+    .csr_mem_flush(csr_mem_flush_0),
+    .csr_reg_out(csr_reg_out_0),
+
+    .csr_pc_input(csr_pc_input_0),
+    .IFID_preg_instr(IFID_preg_instr_0),
+    .csr_addr_WB(csr_addr_WB_0),
+    .imm_WB(imm_WB_0),
+    .csr_wen_WB(csr_wen_WB_0),
+    .mret_ID(mret_ID_0), 
+    .mret_WB(mret_WB_0),
+    .IDEX_preg_dummy(IDEX_preg_dummy_0),
+    .EXMEM_preg_dummy(EXMEM_preg_dummy_0),
+    .ctrl_unit_illegal_instr(ctrl_unit_illegal_instr_0), 
+    .ctrl_unit_ecall(ctrl_unit_ecall_0), 
+    .ctrl_unit_ebreak(ctrl_unit_ebreak_0),
+    .instr_addr_misaligned(instr_addr_misaligned_0)  
     );
  
 
@@ -233,26 +268,17 @@ core_1    #(.reset_vector(reset_vector))
     .data_wen_o(data_wen_o), //active-low
     .data_req_o(data_req_o),
     .data_stall_i(data_stall_i),
-    .data_err_i(data_err_i),
 
     //Instruction memory interface
     //.instr_addr_o(instr_addr_o),
     .instr_i(instr_i_1),
-    .instr_access_fault_i(instr_access_fault_i),
-
-    //Interrupts
-    .meip_i(meip_i),
-    .mtip_i(mtip_i),
-    .msip_i(msip_i),
-    .fast_irq_i(fast_irq_i),
-    .irq_ack_o(irq_ack_o),
     
     ////////register bank/////////
     .rf_wen_WB (rf_wen_WB_1),
     // .rd_WB (rd_WB_1), // already connected
     .mux_o_WB (mux_o_WB_1),
     .take_branch (take_branch_0),
-    .csr_id_flush (csr_id_flush),
+    .csr_id_flush (csr_id_flush_1),
     .stall_EX (stall_EX_1),
     .IDEX_preg_rs1 (IDEX_preg_rs1_1),
     .IDEX_preg_rs2 (IDEX_preg_rs2_1),
@@ -297,7 +323,18 @@ core_1    #(.reset_vector(reset_vector))
     .priority(priority_out_to_core_0),
 
     //
-    .pc_i(pc_i_1)
+    .pc_i(pc_i_1),
+
+    // csr signals
+    .csr_if_flush(csr_if_flush_1), 
+    .csr_ex_flush(csr_ex_flush_1), 
+    .csr_mem_flush(csr_mem_flush_1),
+    
+    .IDEX_preg_misaligned(IDEX_preg_misaligned),
+    .mem_MEM(mem_wen),
+    .IDEX_preg_dummy(IDEX_preg_dummy_1), 
+    .EXMEM_preg_dummy(EXMEM_preg_dummy_1),
+    .csr_pc_input(csr_pc_input_1)
     );
 
 // assign pc_i_1 = priority_out_to_core_0 ? pc_i : (pc_i + 32'd4);
@@ -316,7 +353,8 @@ reg_bank REG_BANK(
     .mux_o_WB_0(mux_o_WB_0),
     .mux_o_WB_1(mux_o_WB_1),
     .take_branch_0(take_branch_0),
-    .csr_id_flush(csr_id_flush),
+    .csr_id_flush_0(csr_id_flush_0),
+    .csr_id_flush_1(csr_id_flush_1),
     
     .stall_EX_0(stall_EX_0),
     .stall_EX_1(stall_EX_1),
@@ -381,6 +419,8 @@ issue_unit ISSUE_UNIT(
     .stall_IF_1(stall_IF_1),
     .dual_hazard_stall_0(dual_hazard_stall_0),
     .dual_hazard_stall_1(dual_hazard_stall_1),
+    .funct3_0(funct3_0),
+    .funct3_1(funct3_1),
     .pipe_0_occuppied_w_branch_IF(pipe_0_occuppied_w_branch_IF),
     .issue_stall_0(issue_stall_0),
     .issue_stall_1(issue_stall_1),
@@ -431,7 +471,11 @@ pc_logic PC_LOGIC (
 	.branch_target_addr_0(branch_target_addr),
 	.pc_o(pc_o), // comes from core 0
 	.pc_increment(pc_increment),
-	.pc_i(pc_i) // goes to core 0
+	.pc_i(pc_i), // goes to core 0
+    .mepc(mepc), 
+    .irq_addr(irq_addr), 
+    .mux1_ctrl_IF(mux1_ctrl_IF), 
+    .mux4_ctrl_IF(mux4_ctrl_IF)
 );
 
 dual_forwarding_unit DUAL_FORWARDING_UNIT (
@@ -468,7 +512,65 @@ dual_forwarding_unit DUAL_FORWARDING_UNIT (
     .pc_WB_1(pc_WB_1),
     .pc_EX_0(pc_EX_0),
     .pc_EX_1(pc_EX_1)
-
 );
+
+always @*
+begin
+    // if(csr_pc_input_0 == 32'b0 && csr_pc_input_1 == 32'b0)
+    //     csr_pc_input = csr_pc_input;
+    if(csr_pc_input_0 == 32'b0)
+        csr_pc_input = csr_pc_input_1;
+    else if(csr_pc_input_1 == 32'b0)
+        csr_pc_input = csr_pc_input_0;        
+    else
+        csr_pc_input = csr_pc_input_0 < csr_pc_input_1 ? csr_pc_input_0 : csr_pc_input_1;
+end
+
+//instantiate CSR Unit
+csr_unit CSR_UNIT(
+                  // inputs
+                  .clk_i(clk_i),
+                  .reset_i(reset_i),
+                  .pc_i(csr_pc_input),
+                  .csr_r_addr_i(IFID_preg_instr_0[31:20]),
+                  .csr_w_addr_i(csr_addr_WB_0),
+                  .csr_reg_i(imm_WB_0),
+                  .csr_wen_i(csr_wen_WB_0),
+                  .meip_i(meip_i), // core_wb in
+                  .mtip_i(mtip_i), // core_wb in
+                  .msip_i(msip_i), // core_wb in
+                  .fast_irq_i(fast_irq_i), // core_wb in
+                  .take_branch_i(take_branch_0),
+                  .mem_wen_i(mem_wen),
+                  .ex_dummy_i_0(IDEX_preg_dummy_0),
+                  .ex_dummy_i_1(IDEX_preg_dummy_1),
+                  .mem_dummy_i_0(EXMEM_preg_dummy_0),
+                  .mem_dummy_i_1(EXMEM_preg_dummy_1),
+                  .mret_id_i(mret_ID_0),
+                  .mret_wb_i(mret_WB_0),
+                  .misaligned_ex(IDEX_preg_misaligned),
+                  .instr_access_fault_i(instr_access_fault_i), // core_wb_in
+                  .illegal_instr_i(ctrl_unit_illegal_instr_0), 
+                  .instr_addr_misaligned_i(instr_addr_misaligned_0),
+                  .ecall_i(ctrl_unit_ecall_0),
+                  .ebreak_i(ctrl_unit_ebreak_0),
+                  .data_err_i(data_err_i), // core_wb_in
+
+                  // outputs
+                  .csr_reg_o(csr_reg_out_0),
+                  .mepc_o(mepc), // to pc_logic
+                  .irq_addr_o(irq_addr), // to pc_logic
+                  .mux1_ctrl_o(mux1_ctrl_IF), // to pc_logic
+                  .mux2_ctrl_o(mux4_ctrl_IF), // to pc_logic
+                  .ack_o(irq_ack_o), // core_wb output
+                  .csr_if_flush_o_0(csr_if_flush_0),
+                  .csr_if_flush_o_1(csr_if_flush_1),
+                  .csr_id_flush_o_0(csr_id_flush_0),
+                  .csr_id_flush_o_1(csr_id_flush_1),
+                  .csr_ex_flush_o_0(csr_ex_flush_0),
+                  .csr_ex_flush_o_1(csr_ex_flush_1),
+                  .csr_mem_flush_o_0(csr_mem_flush_0),
+                  .csr_mem_flush_o_1(csr_mem_flush_1)             
+                  );
 
 endmodule

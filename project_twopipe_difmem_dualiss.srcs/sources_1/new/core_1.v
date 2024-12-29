@@ -9,16 +9,10 @@ module core_1(input reset_i, //active-low reset
     output [31:0] data_o,       //data memory data output
     output        data_req_o,   //data memory access request output. driven high when a store/load is carried out
     input         data_stall_i, //data memory stall input. pipeline is stalled when a memory access request is answered with a stall.
-    input         data_err_i,   //data memory access error input. this will trigger a store/load access fault.
 
     input  [31:0] instr_i,              //instruction input
     output [31:0] instr_addr_o,         //instruction address output
-    input         instr_access_fault_i, //instruction access fault exception signal
 
-    input         meip_i, mtip_i, msip_i, //interrupts
-    input  [15:0] fast_irq_i,
-
-    output irq_ack_o,
     ////////register outputs/////////
     output rf_wen_WB,
     output reg [31:0] mux_o_WB,
@@ -70,14 +64,24 @@ module core_1(input reset_i, //active-low reset
     input priority,
 
     // take_branch signal from core_0    
-    input        take_branch
+    input        take_branch,
+
+    // csr signals
+    input         csr_if_flush,
+    input         csr_ex_flush,
+    input         csr_mem_flush,
+    output reg    IDEX_preg_misaligned, //driven high when the second part of a misaligned access is being executed in EX stage.
+    output [2:0]  mem_MEM,
+    output reg    IDEX_preg_dummy, //indicates if the instruction in the EX stage is dummy, i.e. a flushed instruction, nop.
+    output reg    EXMEM_preg_dummy, //indicates if the instruction in MEM stage is dummy, i.e. a flushed instruction, nop.
+    output reg [31:0] csr_pc_input
     ); //interrupt acknowledge signal. driven high for one cycle when an external interrupt is handled.
 
 parameter reset_vector = 32'h0; //pc is set to this address when a reset occurs.
 
 //IF SIGNALS--------IF SIGNALS--------IF SIGNALS--------IF SIGNALS--------IF SIGNALS--------IF SIGNALS--------IF SIGNALS
 //mux signals
-wire        mux1_ctrl_IF, mux2_ctrl_IF, mux3_ctrl_IF, mux4_ctrl_IF; //mux control signals
+wire        mux2_ctrl_IF, mux3_ctrl_IF; //mux control signals
 wire [31:0] mux1_o_IF, mux2_o_IF, mux3_o_IF, mux4_o_IF; //mux outputs
 //PC
 //wire [31:0] pc_i; //pc input
@@ -93,7 +97,6 @@ reg        IFID_preg_dummy; //indicates if the instruction in the ID stage is du
 wire [31:0] data1_ID, data2_ID;
 wire [11:0] csr_addr_ID; //CSR register address
 wire        csr_wen_ID;
-wire        mret_ID; //driven high when the instruction in ID stage is MRET.
 //control unit outputs
 wire ctrl_unit_muldiv_start;
 wire ctrl_unit_muldiv_sel;
@@ -107,7 +110,6 @@ wire [1:0] ctrl_unit_mem_len;
 wire       ctrl_unit_mem_wen, ctrl_unit_wb_rf_wen, ctrl_unit_wb_csr_wen;
 wire [1:0] ctrl_unit_wb_mux;
 wire       ctrl_unit_wb_sign;
-wire       ctrl_unit_illegal_instr, ctrl_unit_ecall, ctrl_unit_ebreak;
 //mux signals
 wire        mux_ctrl_ID; //control signal for all three muxes
 wire [6:0]  mux1_o_ID; //WB field
@@ -129,9 +131,6 @@ reg [12:0] IDEX_preg_ex;
 reg [2:0]  IDEX_preg_mem;
 reg [6:0]  IDEX_preg_wb;
 reg [11:0] IDEX_preg_csr_addr;
-reg        IDEX_preg_dummy; //indicates if the instruction in the EX stage is dummy, i.e. a flushed instruction, nop.
-reg        IDEX_preg_mret; //driven high when the instruction in EX stage is MRET.
-reg        IDEX_preg_misaligned; //driven high when the second part of a misaligned access is being executed in EX stage.
 
 //reg [31:0] register_bank [31:0]; //32x32 register file
 //END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS--------END ID SIGNALS
@@ -156,7 +155,6 @@ wire [31:0] mux1_o_EX, mux2_o_EX, mux3_o_EX, mux4_o_EX, mux5_o_EX, mux6_o_EX, mu
 wire [3:0]  alu_func;
 wire [1:0]  csr_alu_func;
 wire [31:0] aluout_EX;
-wire [31:0] csr_alu_out;
 
 wire        mem_wen_EX;
 wire [1:0]  mem_length_EX;
@@ -172,8 +170,6 @@ reg [31:0] EXMEM_preg_pc;
 reg [11:0] EXMEM_preg_csr_addr;
 reg [2:0]  EXMEM_preg_mem;
 reg [6:0]  EXMEM_preg_wb;
-reg        EXMEM_preg_dummy; //indicates if the instruction in MEM stage is dummy, i.e. a flushed instruction, nop.
-reg        EXMEM_preg_mret; //driven high when the instruction in MEM stage is MRET.
 reg        EXMEM_preg_misaligned; //driven high when the instruction in MEM stage is a misaligned access.
 reg [1:0]  EXMEM_preg_addr_bits; //two least-significant bits of data address.
 //END EX SIGNALS--------END EX SIGNALS--------END EX SIGNALS--------END EX SIGNALS--------END EX SIGNALS--------END EX SIGNALS
@@ -181,7 +177,6 @@ reg [1:0]  EXMEM_preg_addr_bits; //two least-significant bits of data address.
 //MEM SIGNALS--------MEM SIGNALS--------MEM SIGNALS--------MEM SIGNALS--------MEM SIGNALS--------MEM SIGNALS--------MEM SIGNALS
 //signals from previous stage
 // wire [6:0]  wb_MEM;
-wire [2:0]  mem_MEM;
 wire [31:0] data2_MEM;
 // wire [4:0]  rd_MEM;
 wire [31:0] imm_MEM;
@@ -198,7 +193,6 @@ reg [31:0] MEMWB_preg_memout;
 reg [31:0] MEMWB_preg_aluout, MEMWB_preg_imm;
 reg [11:0] MEMWB_preg_csr_addr;
 reg [6:0]  MEMWB_preg_wb;
-reg        MEMWB_preg_mret;
 reg        MEMWB_preg_misaligned;
 reg [31:0] MEMWB_preg_pc;
 //END MEM SIGNALS--------END MEM SIGNALS--------END MEM SIGNALS--------END MEM SIGNALS--------END MEM SIGNALS--------END MEM SIGNALS
@@ -213,17 +207,11 @@ wire [1:0]  mux_ctrl_WB;
 wire        csr_wen_WB;
 wire [11:0] csr_addr_WB;
 wire [31:0] memout_WB, aluout_WB, imm_WB;
-wire        mret_WB;
 //END WB SIGNALS--------END WB SIGNALS--------END WB SIGNALS--------END WB SIGNALS--------END WB SIGNALS--------END WB SIGNALS
 
 //CSR SIGNALS--------CSR SIGNALS--------CSR SIGNALS--------CSR SIGNALS--------CSR SIGNALS--------CSR SIGNALS
-wire csr_if_flush, csr_ex_flush, csr_mem_flush;
 wire csr_stall; //stalls IF and ID stages
 wire [31:0] csr_pcin_mux1_o, csr_pcin_mux2_o;
-reg [31:0] csr_pc_input;
-wire [31:0] irq_addr; //interrupt handler address from CSR unit
-wire [31:0] mepc; //mepc from CSR unit
-wire [31:0] csr_reg_out;
 
 //END CSR SIGNALS--------END CSR SIGNALS--------END CSR SIGNALS--------END CSR SIGNALS--------END CSR SIGNALS
 assign csr_pcin_mux1_o = csr_ex_flush ? pc_EX : pc_ID;
@@ -243,42 +231,6 @@ begin
 	else
 		csr_pc_input <= csr_pcin_mux2_o;
 end
-// //instantiate CSR Unit
-csr_unit CSR_UNIT(.clk_i(clk_i),
-                  .reset_i(reset_i),
-                  .pc_i(csr_pc_input),
-                  .csr_r_addr_i(IFID_preg_instr[31:20]),
-                  .csr_w_addr_i(csr_addr_WB),
-                  .csr_reg_i(imm_WB),
-                  .csr_wen_i(csr_wen_WB),
-                  .meip_i(meip_i),
-                  .mtip_i(mtip_i),
-                  .msip_i(msip_i),
-                  .fast_irq_i(fast_irq_i),
-                  .take_branch_i(take_branch),
-                  .mret_id_i(mret_ID),
-                  .mret_wb_i(mret_WB),
-                  .misaligned_ex(IDEX_preg_misaligned),
-                  .instr_access_fault_i(instr_access_fault_i),
-                  .data_err_i(data_err_i),
-
-                  .csr_reg_o(csr_reg_out),
-                  .mepc_o(mepc),
-                  .irq_addr_o(irq_addr),
-                  .mux1_ctrl_o(mux1_ctrl_IF),
-                  .mux2_ctrl_o(mux4_ctrl_IF),
-                  .ack_o(irq_ack_o),
-                  .mem_wen_i(mem_MEM[0]),
-                  .ex_dummy_i(IDEX_preg_dummy),
-                  .mem_dummy_i(EXMEM_preg_dummy),
-                  .csr_if_flush_o(csr_if_flush),
-                  .csr_id_flush_o(csr_id_flush),
-                  .csr_ex_flush_o(csr_ex_flush),
-                  .csr_mem_flush_o(csr_mem_flush),
-                  .illegal_instr_i(ctrl_unit_illegal_instr),
-                  .ecall_i(ctrl_unit_ecall),
-                  .ebreak_i(ctrl_unit_ebreak),
-                  .instr_addr_misaligned_i(instr_addr_misaligned));
 
 //IF STAGE---------------------------------------------------------------------------------
 assign instr_addr_o = pc_i;
@@ -376,11 +328,8 @@ control_unit    CTRL_UNIT   (.muldiv_start(ctrl_unit_muldiv_start),
                              .WB_rf_wen(ctrl_unit_wb_rf_wen),
                              .WB_csr_wen(ctrl_unit_wb_csr_wen),
                              .WB_mux(ctrl_unit_wb_mux),
-                             .WB_sign(ctrl_unit_wb_sign),
-                             .illegal_instr(ctrl_unit_illegal_instr),
-                             .ecall_o(ctrl_unit_ecall),
-                             .ebreak_o(ctrl_unit_ebreak),
-                             .mret_o(mret_ID));
+                             .WB_sign(ctrl_unit_wb_sign)
+                             );
 
 imm_decoder     IMM_DEC	    (.instr_in(imm_dec_i), .imm_out(imm_dec_o));
 
@@ -410,7 +359,6 @@ begin
 		{IDEX_preg_rs1, IDEX_preg_rs2, IDEX_preg_rd} <= 15'b0;
 		IDEX_preg_imm  <= 32'b0;
 		IDEX_preg_dummy <= 1'b0;
-		IDEX_preg_mret <= 1'b0;
 		IDEX_preg_misaligned <= 1'b0;
 	end
 
@@ -424,7 +372,6 @@ begin
 		{IDEX_preg_rs1, IDEX_preg_rs2, IDEX_preg_rd} <= 15'b0;
 		IDEX_preg_imm  <= 32'b0;
 		IDEX_preg_dummy <= 1'b1;
-		IDEX_preg_mret <= 1'b0;
 		IDEX_preg_misaligned <= 1'b0;
 	end
 
@@ -457,7 +404,6 @@ begin
             IDEX_preg_mem <= mux2_o_ID;
             IDEX_preg_wb  <= mux1_o_ID;
             IDEX_preg_csr_addr <= csr_addr_ID;
-            IDEX_preg_mret <= mret_ID;
             IDEX_preg_misaligned <= 1'b0;
             IDEX_preg_dummy <= IFID_preg_dummy;
         end
@@ -519,14 +465,10 @@ assign mux4_o_EX = mux4_ctrl_EX == 3'b100 ? aluout_MEM_0
                  : aluout_MEM;
 
 assign mux5_o_EX = mux5_ctrl_EX ? pc_EX	 : mux2_o_EX;
-assign mux6_o_EX = mux6_ctrl_EX[0] ? csr_reg_out : aluout_EX;
-assign mux7_o_EX = mux7_ctrl_EX ? imm_EX : csr_alu_out;
+assign mux6_o_EX = aluout_EX;
+assign mux7_o_EX = imm_EX;
 
 assign mux8_o_EX = mux8_ctrl_EX ? imm_EX : mux2_o_EX;
-
-assign csr_alu_out = csr_alu_func == 2'd0 ? mux8_o_EX
-                   : csr_alu_func == 2'd1 ? csr_reg_out | mux8_o_EX
-                   : csr_reg_out & ~mux8_o_EX;
 
 // //instantiate the forwarding unit.
 // forwarding_unit FWD_UNIT(.rs1(rs1_EX),
@@ -544,8 +486,6 @@ ALU ALU (.src1(mux1_o_EX),
          .func(alu_func), 
          .alu_out(aluout_EX));
 
-// assign instr_addr_misaligned = take_branch & (branch_target_addr[1:0] != 2'd0);
-assign instr_addr_misaligned = 1'b0;
 assign stall_EX = muldiv_stall_EX | data_stall_i;
 
 always @(posedge clk_i or negedge reset_i) //clock the outputs to the pipeline register
@@ -559,7 +499,6 @@ begin
 		EXMEM_preg_rd <= 5'b0;
 		EXMEM_preg_imm <= 32'b0;
 		EXMEM_preg_dummy <= 1'b0;
-		EXMEM_preg_mret <= 1'b0;
 		EXMEM_preg_misaligned <= 1'b0;
 		EXMEM_preg_addr_bits <= 2'b0;
 	end
@@ -573,7 +512,6 @@ begin
 	   EXMEM_preg_rd <= 5'b0;
 	   EXMEM_preg_imm <= 32'b0;
 	   EXMEM_preg_dummy <= 1'b1;
-	   EXMEM_preg_mret <= 1'b0;
 	   EXMEM_preg_misaligned <= 1'b0;
 	   EXMEM_preg_addr_bits <= 2'b0;
 	end
@@ -591,7 +529,6 @@ begin
 		EXMEM_preg_wb[2:0] <= wb_EX[2:0];
 		EXMEM_preg_csr_addr <= csr_addr_EX;
 		EXMEM_preg_dummy <= IDEX_preg_dummy;
-		EXMEM_preg_mret <= IDEX_preg_mret;
 		EXMEM_preg_misaligned <= IDEX_preg_misaligned;
 		EXMEM_preg_addr_bits <= aluout_EX[1:0];
 	end
@@ -642,7 +579,6 @@ begin
 		MEMWB_preg_memout <= 32'b0;
 		MEMWB_preg_aluout <= 32'b0;
 		MEMWB_preg_imm <= 32'b0;
-		MEMWB_preg_mret <= 1'b0;
 		MEMWB_preg_misaligned <= 1'b0;
         MEMWB_preg_pc <= 32'b0;
 	end
@@ -655,7 +591,6 @@ begin
 		MEMWB_preg_memout <= 32'b0;
 		MEMWB_preg_aluout <= 32'b0;
 		MEMWB_preg_imm <= 32'b0;
-		MEMWB_preg_mret <= 1'b0;
 		MEMWB_preg_misaligned <= 1'b0;
         MEMWB_preg_pc <= 32'b0;
 	end
@@ -668,7 +603,6 @@ begin
 		MEMWB_preg_imm <= imm_MEM;
 		MEMWB_preg_aluout <= aluout_MEM;
 		MEMWB_preg_memout <= memout;
-		MEMWB_preg_mret <= EXMEM_preg_mret;
 		MEMWB_preg_misaligned <= EXMEM_preg_misaligned;
         MEMWB_preg_pc <= pc_MEM;
 	end
@@ -683,7 +617,6 @@ assign rd_WB 	   = MEMWB_preg_rd;
 assign csr_addr_WB = MEMWB_preg_csr_addr;
 assign imm_WB      = MEMWB_preg_imm;
 assign aluout_WB   = MEMWB_preg_aluout;
-assign mret_WB     = MEMWB_preg_mret;
 assign pc_WB       = MEMWB_preg_pc;
 //assign nets
 assign mem_length_WB = wb_WB[1:0];
