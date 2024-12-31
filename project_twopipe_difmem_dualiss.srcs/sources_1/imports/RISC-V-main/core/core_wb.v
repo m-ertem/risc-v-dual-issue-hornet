@@ -1,5 +1,3 @@
-`timescale 1ns/1ps
-
 module core_wb(input reset_i, //active-low reset
                input clk_i,
 
