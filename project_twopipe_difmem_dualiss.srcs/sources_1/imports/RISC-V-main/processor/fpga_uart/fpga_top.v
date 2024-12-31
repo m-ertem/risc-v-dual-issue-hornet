@@ -1,5 +1,3 @@
-`timescale 1ns/1ps
-
 module fpga_top(input M100_clk_i,
                 input reset_i,
                 input rx_i,
