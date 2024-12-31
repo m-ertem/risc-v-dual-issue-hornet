@@ -19,7 +19,7 @@ module core_0(input reset_i, //active-low reset
             input  [31:0] IDEX_preg_data1,
             input  [31:0] IDEX_preg_data2, 
             
-            input  priority, // comes from issue unit
+            input  priority_flag, // comes from issue unit
             input  issue_stall_0,  /*comes from issue unit */
             output stall_IF,// goes to issue unit
             output muldiv_stall_EX, // goes core_1
@@ -284,12 +284,12 @@ begin
         if(!stall_ID)
         begin
             IFID_preg_instr <= instr_i;
-            IFID_preg_pc                 <= priority ? pc_o + 4 : pc_o;
+            IFID_preg_pc                 <= priority_flag ? pc_o + 4 : pc_o;
             IFID_preg_dummy              <= 1'b0;
         end
         pc_o <= pc_i;
         
-        IFID_preg_priority_ID <= priority;
+        IFID_preg_priority_ID <= priority_flag;
 
         if(!priority_out)
         begin
@@ -307,7 +307,7 @@ begin
             end
             else
             begin
-                IFID_preg_priority <= priority;
+                IFID_preg_priority <= priority_flag;
             end
         end
         else if(priority_out)
@@ -326,12 +326,12 @@ begin
             end
             else
             begin
-                IFID_preg_priority <= priority;
+                IFID_preg_priority <= priority_flag;
             end
         end
         else
         begin
-            IFID_preg_priority <= priority;
+            IFID_preg_priority <= priority_flag;
         end
 	end
 end

@@ -1,7 +1,7 @@
 module dual_hazard_unit (
     input clk_i,
     input reset_i,
-    input priority,
+    input priority_flag,
     input[4:0] rs1_ID_0,
     input[4:0] rs2_ID_0,
     input[4:0] rd_ID_0,
@@ -28,8 +28,8 @@ module dual_hazard_unit (
     output dual_hazard_stall_1
 );
 
-// e�e priority 1 ise rs1_ID_0, rs2_ID_0, rd_ID_1 kar��la�t�r�lacak
-// e�e priority 0 ise rs1_ID_1, rs2_ID_1, rd_ID_0 kar��la�t�r�lacak
+// e�e priority_flag 1 ise rs1_ID_0, rs2_ID_0, rd_ID_1 kar��la�t�r�lacak
+// e�e priority_flag 0 ise rs1_ID_1, rs2_ID_1, rd_ID_0 kar��la�t�r�lacak
 
 wire uses_rs1_0, uses_rs2_0;
 wire valid_EX_0, valid_EX_1;
@@ -71,7 +71,7 @@ begin
     end
     else
     begin
-        if(priority==1)
+        if(priority_flag==1)
         begin
             stall_once_1 = 1'b0;
             stall_trigger_1 = 1'b0;
@@ -95,7 +95,7 @@ begin
                     stall_once_0 = 1'b0;
             end
         end
-        else if(priority==0)
+        else if(priority_flag==0)
         begin
             stall_once_0 = 1'b0;
             stall_trigger_0 = 1'b0;
