@@ -21,8 +21,6 @@ module issue_unit(
     wire [4:0] opcode_1;
     wire       funct7_0;
     wire       funct7_1;
-    
-    reg priority_flag;
 
     reg [2:0] instr_0_type;
     reg [2:0] instr_1_type;
