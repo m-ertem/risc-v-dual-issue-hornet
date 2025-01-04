@@ -1,5 +1,3 @@
-`timescale 1ns/1ps
-
 module core_wb(input reset_i, //active-low reset
                input clk_i,
 
@@ -193,7 +191,7 @@ core_0    #(.reset_vector(reset_vector))
     .issue_stall_0(issue_stall_0),
     // .priority_overwrite(priority_overwrite),
     .stall_IF(stall_IF_0),
-    .priority(priority_out_to_core_0),
+    .priority_flag(priority_out_to_core_0),
     .muldiv_stall_EX(muldiv_stall_EX),
     
     // dual hazard
@@ -320,7 +318,7 @@ core_1    #(.reset_vector(reset_vector))
     .pc_MEM(pc_MEM_1),
     .pc_WB(pc_WB_1),
 
-    .priority(priority_out_to_core_0),
+    .priority_flag(priority_out_to_core_0),
 
     //
     .pc_i(pc_i_1),
@@ -426,7 +424,7 @@ issue_unit ISSUE_UNIT(
     .issue_stall_1(issue_stall_1),
     .instr_i(instr_i),
     .instr_i_1(instr_i_1),
-    .priority(priority_out_to_core_0),
+    .priority_flag(priority_out_to_core_0),
     .priority_overwrite(priority_overwrite),
     .pc_increment(pc_increment) // goes to pc logic
 );
@@ -434,7 +432,7 @@ issue_unit ISSUE_UNIT(
 dual_hazard_unit DUAL_HAZARD_UNIT(
     .clk_i(clk_i),
     .reset_i(reset_i),
-    .priority(priority_out_to_dual_hazard_unit),
+    .priority_flag(priority_out_to_dual_hazard_unit),
     .rs1_ID_0(rs1_ID_0),
     .rs2_ID_0(rs2_ID_0),
     .rd_ID_0(rd_ID_0),

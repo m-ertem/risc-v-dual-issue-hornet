@@ -61,7 +61,7 @@ module core_1(input reset_i, //active-low reset
     output [31:0] pc_EX,
     output [31:0] pc_MEM,
     output [31:0] pc_WB,
-    input priority,
+    input priority_flag,
 
     // take_branch signal from core_0    
     input        take_branch,
@@ -265,7 +265,7 @@ begin
         if(!stall_ID)
         begin
             IFID_preg_instr <= instr_i;
-            IFID_preg_pc    <= priority ? pc_o : (pc_o + 32'd4);
+            IFID_preg_pc    <= priority_flag ? pc_o : (pc_o + 32'd4);
             IFID_preg_dummy <= 1'b0;
         end
         pc_o <= pc_i;

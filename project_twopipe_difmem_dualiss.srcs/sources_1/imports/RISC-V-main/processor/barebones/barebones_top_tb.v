@@ -1,5 +1,3 @@
-`timescale 1ns/1ps
-
 module barebones_top_tb();
 
 reg reset_i, clk_i;

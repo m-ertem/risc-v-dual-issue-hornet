@@ -12,7 +12,7 @@ module issue_unit(
     output reg issue_stall_1,
     output [31:0] instr_i, 
     output [31:0] instr_i_1,
-    output reg priority,
+    output reg priority_flag,
     output reg priority_overwrite,
     output reg [31:0] pc_increment // goes to pc logic
     );
@@ -21,8 +21,6 @@ module issue_unit(
     wire [4:0] opcode_1;
     wire       funct7_0;
     wire       funct7_1;
-    
-    reg priority;
 
     reg [2:0] instr_0_type;
     reg [2:0] instr_1_type;
@@ -70,7 +68,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 0;         
             issue_stall_0 = 0; // already stalled     
             issue_stall_1 = 1; // NOP
@@ -80,7 +78,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 4;         
             issue_stall_0 = 0; 
             issue_stall_1 = 1; // NOP
@@ -89,7 +87,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 0;         
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 1; // NOP
@@ -98,7 +96,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 4;         
             issue_stall_0 = 0; 
             issue_stall_1 = 0; // already stalled
@@ -107,7 +105,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 0;         
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 0; // already stalled
@@ -117,7 +115,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 4;         
             issue_stall_0 = 0; 
             issue_stall_1 = 1; // NOP
@@ -126,7 +124,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 0;         
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 1; // NOP
@@ -135,7 +133,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 4;         
             issue_stall_0 = 0; 
             issue_stall_1 = 0; // already stalled
@@ -144,7 +142,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 0;         
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 0; // already stalled
@@ -154,7 +152,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 4;         
             issue_stall_0 = 0; 
             issue_stall_1 = 1; // NOP
@@ -163,7 +161,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 0;         
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 1; // NOP
@@ -172,7 +170,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 4;         
             issue_stall_0 = 0; 
             issue_stall_1 = 0; // already stalled
@@ -181,7 +179,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 0;         
             issue_stall_0 = 0; // already stalled 
             issue_stall_1 = 0; // already stalled
@@ -191,7 +189,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
-            priority  = 1'b1;
+            priority_flag  = 1'b1;
             pc_increment  = 4;         
             issue_stall_0 = 1; // NOP
             issue_stall_1 = 0; 
@@ -200,7 +198,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
-            priority  = 1'b1;
+            priority_flag  = 1'b1;
             pc_increment  = 4;         
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 0; 
@@ -209,7 +207,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 0;         
             issue_stall_0 = 1; // NOP
             issue_stall_1 = 0; // already stalled
@@ -218,7 +216,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 0;         
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 0; // already stalled
@@ -228,7 +226,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 4;         
             issue_stall_0 = 0; 
             issue_stall_1 = 1; // NOP 
@@ -237,7 +235,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
-            priority  = 1'b1;
+            priority_flag  = 1'b1;
             pc_increment  = 4;         
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 0;
@@ -246,7 +244,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 4;         
             issue_stall_0 = 0;
             issue_stall_1 = 0; // already stalled
@@ -255,7 +253,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 0;         
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 0; // already stalled
@@ -265,7 +263,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
-            priority  = 1'b1;
+            priority_flag  = 1'b1;
             pc_increment  = 4;         
             issue_stall_0 = 1; // NOP     
             issue_stall_1 = 0;
@@ -274,7 +272,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
-            priority  = 1'b1;
+            priority_flag  = 1'b1;
             pc_increment  = 4;         
             issue_stall_0 = 0; // already stalled    
             issue_stall_1 = 0;
@@ -283,7 +281,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
-            priority  = 1'b1;
+            priority_flag  = 1'b1;
             pc_increment  = 0;         
             issue_stall_0 = 1; // NOP     
             issue_stall_1 = 0;
@@ -292,7 +290,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
-            priority  = 1'b1;
+            priority_flag  = 1'b1;
             pc_increment  = 0;         
             issue_stall_0 = 0; // already stalled  
             issue_stall_1 = 0;
@@ -302,7 +300,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
-            priority  = 1'b1;
+            priority_flag  = 1'b1;
             pc_increment  = 4;               
             issue_stall_0 = 1;
             issue_stall_1 = 0;            
@@ -311,7 +309,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
-            priority  = 1'b1;
+            priority_flag  = 1'b1;
             pc_increment  = 4;               
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 0;            
@@ -320,7 +318,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
-            priority  = 1'b1;
+            priority_flag  = 1'b1;
             pc_increment  = 0;               
             issue_stall_0 = 1; 
             issue_stall_1 = 0; // already stalled          
@@ -329,7 +327,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
-            priority  = 1'b1;
+            priority_flag  = 1'b1;
             pc_increment  = 0;               
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 0; // already stalled     
@@ -339,7 +337,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 4;              
             issue_stall_0 = 0;
             issue_stall_1 = 1; // NOP
@@ -348,7 +346,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 4;              
             issue_stall_0 = 0;
             issue_stall_1 = 0; // already stalled
@@ -357,7 +355,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 0;              
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 1;
@@ -366,7 +364,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 0;              
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 0; // already stalled
@@ -378,7 +376,7 @@ module issue_unit(
             begin
                 instr_i_reg   = instr_i_1_tmp;
                 instr_i_1_reg = instr_i_tmp;
-                priority  = 1'b1;
+                priority_flag  = 1'b1;
                 pc_increment  = 4;
                 issue_stall_0 = 1; // NOP
                 issue_stall_1 = 0;   
@@ -387,7 +385,7 @@ module issue_unit(
             begin
                 instr_i_reg   = instr_i_1_tmp;
                 instr_i_1_reg = instr_i_tmp;
-                priority  = 1'b1;
+                priority_flag  = 1'b1;
                 pc_increment  = 8;
                 issue_stall_0 = 0;
                 issue_stall_1 = 0;   
@@ -397,7 +395,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
-            priority  = 1'b1;
+            priority_flag  = 1'b1;
             pc_increment  = 4;
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 0;   
@@ -406,7 +404,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
-            priority  = 1'b1;
+            priority_flag  = 1'b1;
             pc_increment  = 0;
             issue_stall_0 = 1; 
             issue_stall_1 = 0; // already stalled
@@ -415,7 +413,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_1_tmp;
             instr_i_1_reg = instr_i_tmp;
-            priority  = 1'b1;
+            priority_flag  = 1'b1;
             pc_increment  = 0;
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 0; // already stalled
@@ -427,7 +425,7 @@ module issue_unit(
             begin
                 instr_i_reg = instr_i_tmp;
                 instr_i_1_reg = instr_i_1_tmp;
-                priority = 1'b0;
+                priority_flag = 1'b0;
                 pc_increment = 4;
                 issue_stall_0 = 0;
                 issue_stall_1 = 1; // NOP   
@@ -436,7 +434,7 @@ module issue_unit(
             begin
                 instr_i_reg = instr_i_tmp;
                 instr_i_1_reg = instr_i_1_tmp;
-                priority = 1'b0;
+                priority_flag = 1'b0;
                 pc_increment = 8;
                 issue_stall_0 = 0;
                 issue_stall_1 = 0;   
@@ -448,7 +446,7 @@ module issue_unit(
             begin
                 instr_i_reg = instr_i_1_tmp;
                 instr_i_1_reg = instr_i_tmp;
-                priority = 1'b1;
+                priority_flag = 1'b1;
                 pc_increment = 0;
                 issue_stall_0 = 0; // already stalled
                 issue_stall_1 = 1; // NOP      
@@ -457,7 +455,7 @@ module issue_unit(
             begin
                 instr_i_reg = instr_i_1_tmp;
                 instr_i_1_reg = instr_i_tmp;
-                priority = 1'b1;
+                priority_flag = 1'b1;
                 pc_increment = 4;
                 issue_stall_0 = 0; // already stalled
                 issue_stall_1 = 0;      
@@ -467,7 +465,7 @@ module issue_unit(
         begin
             instr_i_reg = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority = 1'b0;
+            priority_flag = 1'b0;
             pc_increment = 4;
             issue_stall_0 = 0;
             issue_stall_1 = 0; // already stalled      
@@ -476,7 +474,7 @@ module issue_unit(
         begin
             instr_i_reg = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority = 1'b0;
+            priority_flag = 1'b0;
             pc_increment = 0;
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 0; // already stalled      
@@ -486,7 +484,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 4;
             issue_stall_0 = 0; //
             issue_stall_1 = 1; // NOP  
@@ -497,7 +495,7 @@ module issue_unit(
             begin
                 instr_i_reg   = instr_i_1_tmp;
                 instr_i_1_reg = instr_i_tmp;
-                priority  = 1'b1;
+                priority_flag  = 1'b1;
                 pc_increment  = 0;
                 issue_stall_0 = 0; // already stalled
                 issue_stall_1 = 1; // NOP  
@@ -506,7 +504,7 @@ module issue_unit(
             begin
                 instr_i_reg   = instr_i_1_tmp;
                 instr_i_1_reg = instr_i_tmp;
-                priority  = 1'b1;
+                priority_flag  = 1'b1;
                 pc_increment  = 4;
                 issue_stall_0 = 0; // already stalled
                 issue_stall_1 = 0;  
@@ -516,7 +514,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 4;
             issue_stall_0 = 0; 
             issue_stall_1 = 0; // already stalled
@@ -525,7 +523,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b1;
+            priority_flag  = 1'b1;
             pc_increment  = 0;
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 0; // already stalled
@@ -535,7 +533,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 4;
             issue_stall_0 = 0;
             issue_stall_1 = 1; // NOP
@@ -544,7 +542,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 4;
             issue_stall_0 = 0;
             issue_stall_1 = 0; // already stalled
@@ -553,7 +551,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 0;
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 0;
@@ -562,7 +560,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 0;
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 0; // already stalled
@@ -572,7 +570,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 4;
             issue_stall_0 = 0;
             issue_stall_1 = 1; // NOP
@@ -581,7 +579,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 4;
             issue_stall_0 = 0;
             issue_stall_1 = 0; // already stalled
@@ -590,7 +588,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 0;
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 1; 
@@ -599,7 +597,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 0;
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 0; // already stalled
@@ -611,7 +609,7 @@ module issue_unit(
             begin
                 instr_i_reg   = instr_i_tmp;
                 instr_i_1_reg = instr_i_1_tmp;
-                priority  = 1'b0;
+                priority_flag  = 1'b0;
                 pc_increment  = 4;
                 issue_stall_0 = 0;
                 issue_stall_1 = 1; // NOP
@@ -620,7 +618,7 @@ module issue_unit(
             begin
                 instr_i_reg   = instr_i_tmp;
                 instr_i_1_reg = instr_i_1_tmp;
-                priority  = 1'b0;
+                priority_flag  = 1'b0;
                 pc_increment  = 8;
                 issue_stall_0 = 0;
                 issue_stall_1 = 0;
@@ -632,7 +630,7 @@ module issue_unit(
             begin
                 instr_i_reg   = instr_i_1_tmp;
                 instr_i_1_reg = instr_i_tmp;
-                priority  = 1'b1;
+                priority_flag  = 1'b1;
                 pc_increment  = 0;
                 issue_stall_0 = 0; // already stalled
                 issue_stall_1 = 1; // NOP
@@ -641,7 +639,7 @@ module issue_unit(
             begin
                 instr_i_reg   = instr_i_1_tmp;
                 instr_i_1_reg = instr_i_tmp;
-                priority  = 1'b1;
+                priority_flag  = 1'b1;
                 pc_increment  = 4;
                 issue_stall_0 = 0; // already stalled
                 issue_stall_1 = 0;
@@ -651,7 +649,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 4;
             issue_stall_0 = 0;
             issue_stall_1 = 0; // already stalled
@@ -660,7 +658,7 @@ module issue_unit(
         begin
             instr_i_reg   = instr_i_tmp;
             instr_i_1_reg = instr_i_1_tmp;
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 0;
             issue_stall_0 = 0; // already stalled
             issue_stall_1 = 0; // already stalled
@@ -668,14 +666,14 @@ module issue_unit(
         ///////////////////////////////
         else 
         begin 
-            priority  = 1'b0;
+            priority_flag  = 1'b0;
             pc_increment  = 8;
             issue_stall_0 = 0;
             issue_stall_1 = 0;
         end   
     end
 
-    // assign priority = priority;
+    // assign priority_flag = priority_flag;
 
     assign instr_i = instr_i_reg;
     assign instr_i_1 = instr_i_1_reg;
