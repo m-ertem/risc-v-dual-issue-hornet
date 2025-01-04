@@ -19,9 +19,22 @@ initial begin
 //remove the " ../../test/memory_contents/ " parts if you are using Vivado.
 //$readmemh("../../test/memory_contents/bubble_sort_irq.data",uut.memory.mem);
 //$readmemh("../../test/memory_contents/bubble_sort.data",uut.memory.mem);
-$readmemh("D:/bitirme_deneme_2/RISC-V-main/test/memory_contents/bubble_sort.data",uut.inst_memory.mem);
-$readmemh("D:/bitirme_deneme_2/RISC-V-main/test/memory_contents/bubble_sort.data",uut.dat_memory.mem);
+//$readmemh("C:/Users/ayseertem/Desktop/Mustifa/Dual Hornet/my_tests/basic_arithmetic/basic_arithmetic.data",uut.inst_memory.mem);
+//$readmemh("C:/Users/ayseertem/Desktop/Mustifa/Dual Hornet/my_tests/basic_arithmetic/basic_arithmetic.data",uut.dat_memory.mem);
+//$readmemh("C:/Users/ayseertem/Desktop/Mustifa/Dual Hornet/RISC-V-main/test/bubble_sort_irq/bubble_sort_irq.data",uut.inst_memory.mem);
+//$readmemh("C:/Users/ayseertem/Desktop/Mustifa/Dual Hornet/RISC-V-main/test/bubble_sort_irq/bubble_sort_irq.data",uut.dat_memory.mem);
+//$readmemh("C:/Users/ayseertem/Desktop/Mustifa/Dual Hornet/RISC-V-main/test/soft_float/soft_float.data",uut.inst_memory.mem);
+//$readmemh("C:/Users/ayseertem/Desktop/Mustifa/Dual Hornet/RISC-V-main/test/soft_float/soft_float.data",uut.dat_memory.mem);
+$readmemh("C:/Users/ayseertem/Desktop/Mustifa/Dual Hornet/RISC-V-main/test/bubble_sort/bubble_sort_rv32i_zicsr.data",uut.inst_memory.mem);
+$readmemh("C:/Users/ayseertem/Desktop/Mustifa/Dual Hornet/RISC-V-main/test/bubble_sort/bubble_sort_rv32i_zicsr.data",uut.dat_memory.mem);
+//$readmemh("C:/Users/ayseertem/Desktop/Mustifa/Dual Hornet/RISC-V-main/test/aes/aes_test.data",uut.inst_memory.mem);
+//$readmemh("C:/Users/ayseertem/Desktop/Mustifa/Dual Hornet/RISC-V-main/test/aes/aes_test.data",uut.dat_memory.mem);
+//$readmemh("C:/Users/ayseertem/Desktop/Mustifa/Dual Hornet/RISC-V-main/test/muldiv/muldiv.data",uut.inst_memory.mem);
+//$readmemh("C:/Users/ayseertem/Desktop/Mustifa/Dual Hornet/RISC-V-main/test/muldiv/muldiv.data",uut.dat_memory.mem);
 //$readmemh("../../test/memory_contents/soft_float.data",uut.memory.mem);
+//$readmemh("C:/Users/ayseertem/Desktop/Mustifa/Dual Hornet/RISC-V-main/test/direct_mode/direct_mode.data",uut.inst_memory.mem);
+//$readmemh("C:/Users/ayseertem/Desktop/Mustifa/Dual Hornet/RISC-V-main/test/direct_mode/direct_mode.data",uut.dat_memory.mem);
+
 reset_i = 1'b0; fast_irq_i = 16'b0; meip_i = 1'b0;
 #10;
 reset_i = 1'b1;
