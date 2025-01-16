@@ -5,7 +5,7 @@
 <br/>The resulting RISC-V core has following performance improvements:
 
 | RV32IM | Hornet (Cycles) |	Dual-issue (Cycles) |	Improvement (%) |
-|---|---|
+| --- | --- |
 | Bubble Sort | 282 | 195 | 44.6 |
 | Soft Float | 1221 | 1016 | 20.2 |
 | Muldiv | 2928 | 2721 | 7.6 |
