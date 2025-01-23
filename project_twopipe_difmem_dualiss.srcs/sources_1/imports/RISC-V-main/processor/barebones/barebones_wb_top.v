@@ -178,7 +178,7 @@ core_wb corewb (.reset_i(reset_i),
                .fast_irq_i(fast_irq_i),
                .irq_ack_o(irq_ack_o));
 
-inst_mem_rw_wb #(.ADDR_WIDTH(13))
+inst_mem_rw_wb #(.ADDR_WIDTH(17))
   inst_memory(.port0_wb_cyc_i(wb_cyc_i[0]),
               .port0_wb_stb_i(wb_stb_i[0]),
               .port0_wb_we_i(wb_we_i[0]),
